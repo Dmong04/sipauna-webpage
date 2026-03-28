@@ -69,9 +69,10 @@ const toggleTheme = () => {
                  border-none outline-none" required />
       </div>
 
-      <div v-if="state === 'login'" class="mt-4 text-left">
-        <button type="button" class="text-sm text-gray-500 dark:text-white hover:underline">
-          ¿Olvidaste tu contraseña? Haz click aquí
+      <div v-if="state === 'login'" class="mt-4">
+        <span class="text-sm text-gray-500 dark:text-white">¿Olvidaste tu contraseña? </span>
+        <button type="button" class="text-sm text-blue-400 hover:underline">
+          Haz click aquí
         </button>
       </div>
 
