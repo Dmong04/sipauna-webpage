@@ -1,6 +1,7 @@
 <script setup>
 const state = ref('login')
 const colorMode = useColorMode()
+const router = useRouter()
 
 const formData = reactive({
   name: '',
@@ -8,7 +9,35 @@ const formData = reactive({
   password: ''
 })
 
-const handleSubmit = () => { }
+const error = ref('')
+const loading = ref(false)
+
+const handleSubmit = async () => {
+  error.value = ''
+  loading.value = true
+
+  try {
+    const result = await GqlLogin({
+      email: formData.email,
+      password: formData.password
+    })
+
+    // Guardar token y usuario en el estado global
+    const token = useCookie('auth_token')
+    const user = useState('auth_user')
+
+    token.value = result.login.token
+    user.value = result.login.user
+
+    // Redirigir al dashboard
+    router.push('/dashboard')
+
+  } catch (e) {
+    error.value = 'Credenciales incorrectas. Intente de nuevo.'
+  } finally {
+    loading.value = false
+  }
+}
 
 const toggleState = () => {
   state.value = state.value === 'login' ? 'register' : 'login'
@@ -53,7 +82,7 @@ const toggleTheme = () => {
                   ring-2 ring-gray-300 dark:ring-white/15
                   focus-within:ring-blue-500/60
                   h-12 rounded-full overflow-hidden pl-6 gap-2 transition-all">
-        <input type="email" v-model="formData.email" placeholder="Identificación" class="w-full bg-transparent text-gray-800 dark:text-white
+        <input type="email" v-model="formData.email" placeholder="Correo electrónico" class="w-full bg-transparent text-gray-800 dark:text-white
                  placeholder-gray-400 dark:placeholder-white/60
                  border-none outline-none" required />
       </div>
@@ -69,6 +98,8 @@ const toggleTheme = () => {
                  border-none outline-none" required />
       </div>
 
+      <p v-if="error" class="text-red-400 text-sm mt-3">{{ error }}</p>
+
       <div v-if="state === 'login'" class="mt-4">
         <span class="text-sm text-gray-500 dark:text-white">¿Olvidaste tu contraseña? </span>
         <button type="button" class="text-sm text-blue-400 hover:underline">
@@ -76,8 +107,9 @@ const toggleTheme = () => {
         </button>
       </div>
 
-      <button type="submit" class="mt-2 w-full h-11 rounded-full text-white bg-red-600 hover:bg-red-500 transition">
-        {{ state === 'login' ? 'Iniciar sesión' : 'Registrarse' }}
+      <button type="submit" :disabled="loading"
+        class="mt-2 w-full h-11 rounded-full text-white bg-red-600 hover:bg-red-500 transition disabled:opacity-50 disabled:cursor-not-allowed">
+        {{ loading ? 'Loading...' : state === 'login' ? 'Iniciar sesión' : 'Registrarse' }}
       </button>
 
       <p @click="toggleState" class="text-gray-500 dark:text-white text-sm mt-3 mb-11 cursor-pointer">
