@@ -1,4 +1,7 @@
 <script setup>
+definePageMeta({
+  layout: 'false',
+})
 const state = ref('login')
 const colorMode = useColorMode()
 const router = useRouter()

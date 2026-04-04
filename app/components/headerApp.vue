@@ -15,7 +15,7 @@ const toggleTheme = () => {
 
 <template>
   <header
-    class="bg-white py-5 shadow-sm dark:bg-gray-900 dark:border-b dark:border-white/10 transition-all duration-300">
+    class="bg-white py-2  dark:bg-gray-900  transition-all duration-300">
 
 
     <div class="flex items-center justify-between max-w-7xl mx-auto px-4">
