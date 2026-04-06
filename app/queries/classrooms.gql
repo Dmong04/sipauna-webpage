@@ -1,0 +1,7 @@
+query getClassrooms{
+    classrooms{
+        code
+        name
+        capacity
+    }
+}
