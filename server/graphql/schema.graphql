@@ -18,3 +18,22 @@ type User {
   type Mutation {
     login(email: String!, password: String!): AuthPayload
   }
+
+
+
+  type classroom {
+    code: ID!
+    name: String!
+    capacity: Int!
+  }
+
+  type Query {
+    classrooms: [classroom!]!
+    classroom(code: ID!): classroom
+  }
+
+  type Mutation{
+    createClassroom(code: ID!, name: String!, capacity: Int!): classroom
+    updateClassroom(code:ID name: String, capacity: Int): classroom
+    deleteClassroom(code: ID!): Boolean
+  }

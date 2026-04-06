@@ -5,6 +5,6 @@ import Login from './pages/index.vue';
 
 <template>
   <div>
-    <NuxtPage />
+         <NuxtPage />
   </div>
 </template>
