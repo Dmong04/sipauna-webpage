@@ -17,7 +17,6 @@ export default defineNuxtPlugin(() => {
 
         if (event.data?.type === 'SESSION_NOT_FOUND') {
             auth.clearLocalSession()
-            // 👇 Forzamos redirección al login desde el plugin
             navigateTo('/login', { replace: true })
         }
     })
