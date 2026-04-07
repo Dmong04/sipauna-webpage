@@ -6,7 +6,11 @@ import { dirname, resolve } from 'path'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/color-mode', 'nuxt-graphql-client'],
+  modules: ['@nuxtjs/color-mode', 'nuxt-graphql-client', '@pinia/nuxt'],
+  routeRules: {
+    '/': { ssr: false },
+    '/dashboard/**': { ssr: false },
+  },
   colorMode: {
     classSuffix: ''
   },
