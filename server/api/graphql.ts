@@ -1,8 +1,13 @@
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { createYoga } from "graphql-yoga";
-import { typeDefs } from "../graphql/schema";
+import fs from 'fs'
+import path from 'path'
 import { resolvers } from "../graphql/resolvers";
 
+const typeDefs = fs.readFileSync(
+  path.resolve('./server/graphql/schema.graphql'),
+  'utf-8'
+)
 const yoga = createYoga({
     schema: makeExecutableSchema({ typeDefs, resolvers }),
     graphqlEndpoint: '/api/graphql',

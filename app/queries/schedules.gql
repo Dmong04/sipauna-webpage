@@ -1,0 +1,11 @@
+query getSchedules {
+  schedules {
+    id
+    classroomCode
+    day
+    startTime
+    endTime
+    subject
+    teacherName
+  }
+}

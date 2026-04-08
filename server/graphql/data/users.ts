@@ -9,7 +9,7 @@ export const users = [
     {
         userId: "u2",
         fullname: "Christopher Lamberti Chavarría",
-        email: "christopher.lamberti.chavarría@una.ac.cr",
+        email: "christopher@gmail.com",
         password: "1234",
         roleId : 1,
     },
@@ -19,5 +19,12 @@ export const users = [
         email: "pablo.gonzalez@una.ac.cr",
         password: "1234",
         roleId : 1,
+    },
+    {
+        userId: "u4",
+        fullname: "Eddier Lopez",
+        email: "eddier@gmail.com",
+        password: "1234",
+        roleId: "2"
     }
 ]
