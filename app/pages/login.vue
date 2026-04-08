@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useAuthStore } from '~/composables/auth'
 
 const state = ref('login')

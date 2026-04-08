@@ -1,0 +1,57 @@
+query getBookings {
+  bookings {
+    id
+    classroomCode
+    requesterId
+    requesterName
+    date
+    startTime
+    endTime
+    reason
+    status
+  }
+}
+
+query getBookingsByUser($userId: ID!) {
+  bookingsByUser(userId: $userId) {
+    id
+    classroomCode
+    requesterId
+    requesterName
+    date
+    startTime
+    endTime
+    reason
+    status
+  }
+}
+
+mutation createBooking(
+  $classroomCode: ID!
+  $requesterId: ID!
+  $requesterName: String!
+  $date: String!
+  $startTime: String!
+  $endTime: String!
+  $reason: String!
+) {
+  createBooking(
+    classroomCode: $classroomCode
+    requesterId: $requesterId
+    requesterName: $requesterName
+    date: $date
+    startTime: $startTime
+    endTime: $endTime
+    reason: $reason
+  ) {
+    id
+    status
+  }
+}
+
+mutation updateBookingStatus($id: ID!, $status: String!) {
+  updateBookingStatus(id: $id, status: $status) {
+    id
+    status
+  }
+}
