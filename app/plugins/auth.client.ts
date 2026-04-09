@@ -5,10 +5,6 @@ export default defineNuxtPlugin(() => {
 
     if (!('serviceWorker' in navigator)) return
 
-    navigator.serviceWorker.register('/sw-auth.js').then((registration) => {
-        console.log('[SW] Registrado:', registration.scope)
-    })
-
     navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data?.type === 'SESSION_RESTORED') {
             const { token, user } = event.data.payload
@@ -25,7 +21,6 @@ export default defineNuxtPlugin(() => {
         registration.active?.postMessage({ type: 'GET_SESSION' })
     })
 
-    // 👇 Verificamos la sesión cada vez que la tab recupera el foco
     window.addEventListener('focus', () => {
         navigator.serviceWorker.ready.then((registration) => {
             registration.active?.postMessage({ type: 'GET_SESSION' })
