@@ -9,7 +9,7 @@
                     <img src="/img/LogoUNA.png" alt="Logo" class="h-32 w-40">
                     <div class="flex flex-col">
                         <span class="dark:text-white text-4xl">SIPAUNA</span>
-                        <span class="dark:text-white">Sistema para Préstamo de Aulas de la Universidad Nacional</span>
+                        <span class="dark:text-white">Sistema Institucional para Préstamo de Aulas de la Universidad Nacional SRCH</span>
                     </div>
                 </div>
                 <p class="mt-6 text-sm dark:text-white">
@@ -42,7 +42,7 @@
             </div>
         </div>
         <p class="pt-4 text-center text-sm dark:text-white md:text-sm pb-5">
-            Copyright 2026<a href="https://prebuiltui.com"> &copy;SIPAUNA</a>. Todos los derechos reservados.
+            Copyright 2026 &copy;SIPAUNA. Todos los derechos reservados.
         </p>
     </footer>
 </template>

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import Login from './pages/login.vue';
-
+useHead({
+  link: [
+    { rel: 'manifest', href: '/manifest.webmanifest' }
+  ]
+})
 </script>
 
 <template>
-  <div>
-         <NuxtPage />
-  </div>
+  <NuxtPage />
 </template>
