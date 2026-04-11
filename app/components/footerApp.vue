@@ -2,8 +2,8 @@
 
 </script>
 <template>
-    <footer class="px-6 md:px-16 lg:px-24 xl:px-32 pt-8 w-full text-gray-500">
-        <div class="flex flex-col md:flex-row justify-between w-full gap-10 border-b border-gray-500/30 pb-6">
+    <footer class="px-6 border-t border-gray-200 dark:border-gray-800 md:px-16 lg:px-24 xl:px-32 pt-8 w-full text-gray-500">
+        <div class="flex flex-col md:flex-row justify-between w-full gap-10 ">
             <div class="md:max-w-96">
                 <div class="flex items-center">
                     <img src="/img/LogoUNA.png" alt="Logo" class="h-32 w-40">
@@ -20,10 +20,10 @@
                 <div>
                     <h2 class="font-semibold mb-5 dark:text-white text-gray-800">Información</h2>
                     <ul class="dark:text-white text-sm space-y-2">
-                        <li><a href="#">Acerca de SIPAUNA</a></li>
+                        <li><a href="/about">Acerca de SIPAUNA</a></li>
                         <li><a href="#">Desarrolladores</a></li>
-                        <li><a href="#">Contacto</a></li>
-                        <li><a href="#">Misión y visión</a></li>
+                        <li><a href="https://www.directorio.una.ac.cr/">Contacto</a></li>
+                        <li><a href="https://www.una.ac.cr/">UNA</a></li>
                     </ul>
                 </div>
                 <div>

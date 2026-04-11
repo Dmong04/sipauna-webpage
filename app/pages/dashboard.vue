@@ -4,7 +4,6 @@
     <main class="p-4">
       <NuxtPage />
     </main>
-
     <FooterApp />
   </div>
 </template>
