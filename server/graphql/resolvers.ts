@@ -1,13 +1,13 @@
-import { users }      from './data/users'
+import { users } from './data/users'
 import { classrooms } from './data/classrooms'
-import { schedules }  from './data/schedules'
+import { schedules } from './data/schedules'
 import { bookings, type Booking, type BookingStatus } from './data/bookings'
 
 // Copias mutables de los datos mock
-let mockUsers      = [...users]
+let mockUsers = [...users]
 let mockClassrooms = [...classrooms]
-let mockSchedules  = [...schedules]
-let mockBookings   = [...bookings]
+let mockSchedules = [...schedules]
+let mockBookings = [...bookings]
 
 let bookingCounter = mockBookings.length + 1
 
@@ -56,7 +56,7 @@ export const resolvers = {
     ) => {
       const classroom = mockClassrooms.find(c => c.code === code)
       if (!classroom) throw new Error('Aula no encontrada')
-      if (name     !== undefined) classroom.name     = name
+      if (name !== undefined) classroom.name = name
       if (capacity !== undefined) classroom.capacity = capacity
       return classroom
     },
