@@ -171,7 +171,7 @@ onMounted(fetchData)
 </script>
 
 <template>
-  <section class="m-4 **:transition-colors **:duration-300">
+  <section class="m-4 min-h-[60vh] **:transition-colors **:duration-300">
 
     <!-- Error global -->
     <div

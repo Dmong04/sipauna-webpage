@@ -20,7 +20,7 @@ const toggleTheme = () => {
       <nav class="hidden md:flex text-sm items-center">
         <div class="flex items-center justify-center gap-1">
           <div class="gap-1">
-            <NuxtLink to="/dashboard"
+            <NuxtLink to="/dashboard/home"
               class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
               Inicio
             </NuxtLink>
@@ -69,7 +69,7 @@ const toggleTheme = () => {
       class="md:hidden flex flex-col px-6 pt-3 pb-4 gap-3 border-t border-gray-200 dark:border-white/10 mt-2">
       <div>
         <div class="flex flex-col gap-4">
-          <NuxtLink to="/dashboard"
+          <NuxtLink to="/dashboard/home"
             class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
             Inicio
           </NuxtLink>

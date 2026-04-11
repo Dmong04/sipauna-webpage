@@ -25,7 +25,7 @@ const handleSubmit = async () => {
 <template>
   <section class="flex flex-col lg:flex-row m-4 gap-0 **:transition-colors **:duration-300">
     <!--Card de filtrado de resultados-->
-    <section class="flex flex-col card shadow-md rounded-xl mx-2 p-8 w-full mt-4 mb-2">
+    <section class="flex flex-col   rounded-xl mx-2 p-8 w-full mt-4 mb-2">
 
       <p class="text-sm text-gray-600 dark:text-gray-100">Aquí podrás comprobar la disponibilidad de los espacios para
         tus actividades.</p>
@@ -135,7 +135,7 @@ const handleSubmit = async () => {
     </section>
 
     <!-- Card de resultados -->
-    <section class="card shadow-md mx-2 p-8 w-full mt-4 mb-2 rounded-xl">
+    <section class=" mx-2 p-8 w-full mt-4 mb-2 rounded-xl">
       <span class="text-md font-medium text-gray-900 dark:text-gray-100">Resultados:</span>
 
       <!-- Sin resultados -->
