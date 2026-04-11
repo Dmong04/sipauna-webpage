@@ -1,13 +1,8 @@
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { createYoga } from "graphql-yoga";
-import fs from 'fs'
-import path from 'path'
 import { resolvers } from "../graphql/resolvers";
+import { typeDefs } from "../graphql/schema"
 
-const typeDefs = fs.readFileSync(
-  path.resolve('./server/graphql/schema.graphql'),
-  'utf-8'
-)
 const yoga = createYoga({
     schema: makeExecutableSchema({ typeDefs, resolvers }),
     graphqlEndpoint: '/api/graphql',
@@ -15,6 +10,15 @@ const yoga = createYoga({
 })
 
 export default defineEventHandler(async (event) => {
+    setResponseHeaders(event, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    })
+
+    if (event.method === 'OPTIONS') {
+        return null
+    }
     const request = toWebRequest(event)
     const response = await yoga.fetch(request)
 

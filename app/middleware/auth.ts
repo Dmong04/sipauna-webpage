@@ -1,4 +1,6 @@
 export default defineNuxtRouteMiddleware(async (to) => {
+    const publicRoutes = ['/login', '/manifest.webmanifest']
+    if (publicRoutes.includes(to.path)) return
     const auth = useAuthStore()
 
     await new Promise<void>((resolve) => {
@@ -24,7 +26,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         }
 
         navigator.serviceWorker.addEventListener('message', handler)
-        
+
         navigator.serviceWorker.ready.then((registration) => {
             registration.active?.postMessage({ type: 'GET_SESSION' })
         })
