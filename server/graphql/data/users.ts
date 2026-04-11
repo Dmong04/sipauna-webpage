@@ -25,6 +25,6 @@ export const users = [
         fullname: "Eddier Lopez",
         email: "eddier@gmail.com",
         password: "1234",
-        roleId: "2"
+        roleId: 2
     }
 ]
