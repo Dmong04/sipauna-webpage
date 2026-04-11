@@ -48,6 +48,80 @@ export default defineNuxtConfig({
           purpose: 'maskable',
         },
       ],
+      screenshots: [
+        {
+          src: './screenshots/login_light_mode.jpeg',
+          sizes: '1080x2408',
+          type: 'image/jpeg',
+          form_factor: 'narrow'
+        },
+        {
+          src: './screenshots/login_dark_mode.jpeg',
+          sizes: '1080x2408',
+          type: 'image/jpeg',
+          form_factor: 'narrow'
+        },
+        {
+          src: './screenshots/dashboard_home.jpeg',
+          sizes: '1080x2408',
+          type: 'image/jpeg',
+          form_factor: 'narrow'
+        },
+        {
+          src: './screenshots/dashboard_menu.jpeg',
+          sizes: '1080x2408',
+          type: 'image/jpeg',
+          form_factor: 'narrow'
+        },
+        {
+          src: './screenshots/footer.jpeg',
+          sizes: '1080x2408',
+          type: 'image/jpeg',
+          form_factor: 'narrow'
+        },
+        {
+          src: './screenshots/bookings.jpeg',
+          sizes: '1080x2408',
+          type: 'image/jpeg',
+          form_factor: 'narrow'
+        },
+        {
+          src: './screenshots/schedules.jpeg',
+          sizes: '1080x2408',
+          type: 'image/jpeg',
+          form_factor: 'narrow'
+        },
+        {
+          src: './screenshots/availability.jpeg',
+          sizes: '1080x2408',
+          type: 'image/jpeg',
+          form_factor: 'narrow'
+        },
+        {
+          src: './screenshots/availability_results.jpeg',
+          sizes: '1080x2408',
+          type: 'image/jpeg',
+          form_factor: 'narrow'
+        },
+        {
+          src: './screenshots/login_wide.jpeg',
+          sizes: '1280x720',
+          type: 'image/jpeg',
+          form_factor: 'wide'
+        },
+        {
+          src: './screenshots/dashboard_home_wide.jpeg',
+          sizes: '1280x720',
+          type: 'image/jpeg',
+          form_factor: 'wide'
+        },
+        {
+          src: './screenshots/schedules_wide.jpeg',
+          sizes: '1280x720',
+          type: 'image/jpeg',
+          form_factor: 'wide'
+        },
+      ],
     },
     devOptions: {
       enabled: true,
