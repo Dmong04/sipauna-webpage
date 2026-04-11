@@ -29,7 +29,7 @@ const handleSubmit = async () => {
     await auth.setSession(result.login.token, result.login.user)
 
     // Redirigir al dashboard
-    navigateTo('/dashboard/home', { replace: true })
+    navigateTo('/dashboard', { replace: true })
 
   } catch (e) {
     error.value = 'Credenciales incorrectas. Intente de nuevo.'
