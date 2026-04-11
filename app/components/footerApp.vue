@@ -22,8 +22,8 @@
                     <ul class="dark:text-white text-sm space-y-2">
                         <li><a href="/about">Acerca de SIPAUNA</a></li>
                         <li><a href="#">Desarrolladores</a></li>
-                        <li><a href="https://www.directorio.una.ac.cr/">Contacto</a></li>
-                        <li><a href="https://www.una.ac.cr/">UNA</a></li>
+                        <li><a href="https://www.directorio.una.ac.cr/" target="_blank" rel="Directorio">Contacto</a></li>
+                        <li><a href="https://www.una.ac.cr/" target="_blank" rel="UNA" >UNA</a></li>
                     </ul>
                 </div>
                 <div>
