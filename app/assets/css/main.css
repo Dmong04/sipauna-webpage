@@ -8,3 +8,7 @@ body {
 html {
   overflow-y: scroll;
 }
+
+.nav-link {
+  transition: color 300ms, text-decoration 300ms 300ms;
+}

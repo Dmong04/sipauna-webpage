@@ -19,21 +19,26 @@ const showModal = ref(false)
                     Nacido de un proyecto universitario, al servicio de la institución.
                 </p>
             </div>
-            <div class="flex-1 flex items-start md:justify-end gap-20">
+            <div class="flex-1 flex flex-col md:flex-row md:justify-around gap-4">
                 <div>
                     <h2 class="font-semibold mb-5 dark:text-white text-gray-800">Información</h2>
                     <ul class="dark:text-white text-sm space-y-2">
-                        <li><a href="/dashboard/about">Acerca de SIPAUNA</a></li>
-                        <!-- Solo cambia este link por un botón -->
+                        <li><a href="/dashboard/about"
+                                class="nav-link hover:underline hover:underline-offset-4 hover:decoration-2 hover:decoration-red-500 hover:text-red-500 transition duration-300">Acerca
+                                de
+                                SIPAUNA</a></li>
                         <li>
                             <button @click="showModal = true"
-                                class="hover:text-gray-800 dark:hover:text-gray-300 transition-colors">
+                                class="nav-link hover:underline hover:underline-offset-4 hover:decoration-2 hover:decoration-red-500 hover:text-red-500 transition duration-300">
                                 Desarrolladores
                             </button>
                         </li>
-                        <li><a href="https://www.directorio.una.ac.cr/" target="_blank" rel="Directorio">Contacto</a>
+                        <li><a href="https://www.directorio.una.ac.cr/" target="_blank" rel="Directorio"
+                                class="nav-link hover:underline hover:underline-offset-4 hover:decoration-2 hover:decoration-red-500 hover:text-red-500 transition duration-300">Contacto</a>
                         </li>
-                        <li><a href="https://www.una.ac.cr/" target="_blank" rel="UNA">UNA</a></li>
+                        <li><a href="https://www.una.ac.cr/" target="_blank" rel="UNA"
+                                class="nav-link hover:underline hover:underline-offset-4 hover:decoration-2 hover:decoration-red-500 hover:text-red-500 transition duration-300">UNA</a>
+                        </li>
                     </ul>
                 </div>
                 <div>
