@@ -19,12 +19,11 @@ const showModal = ref(false)
                     Nacido de un proyecto universitario, al servicio de la institución.
                 </p>
             </div>
-            <div class="flex-1 flex items-start md:justify-end gap-20">
+            <div class="flex-1 flex flex-col md:flex-row md:justify-around gap-4">
                 <div>
                     <h2 class="font-semibold mb-5 dark:text-white text-gray-800">Información</h2>
                     <ul class="dark:text-white text-sm space-y-2">
                         <li><a href="/dashboard/about">Acerca de SIPAUNA</a></li>
-                        <!-- Solo cambia este link por un botón -->
                         <li>
                             <button @click="showModal = true"
                                 class="hover:text-gray-800 dark:hover:text-gray-300 transition-colors">
