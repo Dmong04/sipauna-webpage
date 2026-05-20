@@ -1,105 +1,159 @@
 <script setup>
-import { ref } from 'vue'
 const menuOpen = ref(false)
-
-const toggleMenu = () => {
-  menuOpen.value = !menuOpen.value
-}
-
 const colorMode = useColorMode()
+const route = useRoute()
+const auth = useAuthStore()
+
+const navItems = [
+  { to: '/dashboard', label: 'Inicio' },
+  { to: '/dashboard/schedules', label: 'Horarios' },
+  { to: '/dashboard/booking', label: 'Solicitud de reservación' },
+  { to: '/dashboard/availability', label: 'Comprobar disponibilidad' },
+]
+
+const userInitial = computed(() =>
+  auth.user?.fullname?.charAt(0)?.toUpperCase() ?? '?'
+)
+
+const isActive = (path) => route.path === path
 
 const toggleTheme = () => {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
+
+const logout = async () => {
+  await auth.clearSession()
+  navigateTo('/login', { replace: true })
+}
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 bg-white py-2  dark:bg-gray-900  transition-all duration-300">
-    <div class="flex items-center justify-between md:justify-around max-w-7xl mx-auto px-4">
-      <img src="/img/LogoUNA.png" alt="SIPAUNA Logo" class="h-15 w-auto" />
-      <nav class="hidden md:flex text-sm items-center">
-        <div class="flex items-center justify-center gap-1">
-          <div class="gap-1">
-            <NuxtLink to="/dashboard"
-              class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
-              Inicio
-            </NuxtLink>
-            <NuxtLink to="/dashboard/schedules"
-              class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
-              Horarios
-            </NuxtLink>
-            <NuxtLink to="/dashboard/booking"
-              class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
-              Solicitud de reservación
-            </NuxtLink>
-            <NuxtLink to="/dashboard/availability"
-              class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
-              Comprobar disponibilidad
-            </NuxtLink>
-          </div>
-        </div>
+  <header class="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
+    <div class="flex items-center justify-between max-w-7xl mx-auto px-4 h-16">
+
+      <!-- Logo -->
+      <NuxtLink to="/dashboard" class="flex items-center gap-2.5 shrink-0">
+        <img src="/img/LogoUNA.png" alt="SIPAUNA" class="h-10 w-auto" />
+        <span class="font-semibold text-gray-800 dark:text-white text-sm hidden sm:inline">SIPAUNA</span>
+      </NuxtLink>
+
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex items-center">
+        <NuxtLink
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          :class="[
+            'border-b-2 text-sm font-medium inline-flex items-center px-3 h-16 transition-colors duration-200',
+            isActive(item.to)
+              ? 'border-red-500 text-red-600 dark:text-red-400'
+              : 'border-transparent text-gray-600 dark:text-gray-300 hover:border-red-400 hover:text-red-500 dark:hover:text-red-400'
+          ]"
+        >
+          {{ item.label }}
+        </NuxtLink>
       </nav>
 
-      <button @click="toggleTheme"
-        class="hidden text-white md:flex items-center gap-2 bg-blue-700 dark:bg-gray-800 rounded-lg px-3 py-2 hover:bg-blue-500 dark:hover:bg-gray-700 duration-300 transition-colors ease-in">
-        <svg v-if="colorMode.value !== 'dark'" class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-          viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M7.05 7.05L5.636 5.636M12 7a5 5 0 100 10 5 5 0 000-10z" />
-        </svg>
-        <svg v-else class="w-6 h-6 text-white fill-current" viewBox="0 0 20 20">
-          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-        </svg>
-        <span class="text-slate-200">Cambiar tema</span>
-      </button>
+      <!-- Right side (desktop) -->
+      <div class="hidden md:flex items-center gap-3">
+        <div v-if="auth.user" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center text-red-700 dark:text-red-300 font-semibold text-xs shrink-0">
+            {{ userInitial }}
+          </div>
+          <span class="text-sm text-gray-600 dark:text-gray-300 max-w-36 truncate">{{ auth.user.fullname }}</span>
+        </div>
 
-      <!-- Botón hamburguesa -->
-      <button @click="toggleMenu" class="md:hidden text-gray-800 dark:text-white">
-        <svg v-if="!menuOpen" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button
+          @click="toggleTheme"
+          class="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+          :title="colorMode.value === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+        >
+          <svg v-if="colorMode.value !== 'dark'" class="w-5 h-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M7.05 7.05L5.636 5.636M12 7a5 5 0 100 10 5 5 0 000-10z" />
+          </svg>
+          <svg v-else class="w-5 h-5 text-gray-300 fill-current" viewBox="0 0 20 20">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+          </svg>
+        </button>
+
+        <button
+          @click="logout"
+          title="Cerrar sesión"
+          class="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200"
+        >
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Hamburger (mobile) -->
+      <button
+        @click="menuOpen = !menuOpen"
+        class="md:hidden p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        aria-label="Menú"
+      >
+        <svg v-if="!menuOpen" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
-        <svg v-else class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
 
-    <!-- Nav Móvil (fuera del flex) -->
-    <div v-if="menuOpen"
-      class="md:hidden flex flex-col px-6 pt-3 pb-4 gap-3 border-t border-gray-200 dark:border-white/10 mt-2">
-      <div>
-        <div class="flex flex-col gap-4">
-          <NuxtLink to="/dashboard" @click="menuOpen = false"
-            class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
-            Inicio
-          </NuxtLink>
-          <NuxtLink to="/dashboard/schedules" @click="menuOpen = false"
-            class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
-            Horarios
-          </NuxtLink>
-          <NuxtLink to="/dashboard/booking" @click="menuOpen = false"
-            class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
-            Solicitud de reservación
-          </NuxtLink>
-          <NuxtLink to="/dashboard/availability" @click="menuOpen = false"
-            class="border-b-2 border-transparent hover:border-red-500 hover:text-red-500 dark:text-white text-gray-600 text-sm font-medium inline-flex items-center px-2 h-full transition-colors duration-200">
-            Comprobar disponibilidad
-          </NuxtLink>
+    <!-- Mobile menu -->
+    <div v-if="menuOpen" class="md:hidden border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <nav class="flex flex-col px-4 py-3 gap-1">
+        <NuxtLink
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          @click="menuOpen = false"
+          :class="[
+            'flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200',
+            isActive(item.to)
+              ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+          ]"
+        >
+          {{ item.label }}
+        </NuxtLink>
+      </nav>
+
+      <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-800">
+        <div v-if="auth.user" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center text-red-700 dark:text-red-300 font-semibold text-xs shrink-0">
+            {{ userInitial }}
+          </div>
+          <span class="text-sm text-gray-600 dark:text-gray-300 max-w-40 truncate">{{ auth.user.fullname }}</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            @click="toggleTheme"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-sm text-gray-600 dark:text-gray-300 transition-colors duration-200"
+          >
+            <svg v-if="colorMode.value !== 'dark'" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M7.05 7.05L5.636 5.636M12 7a5 5 0 100 10 5 5 0 000-10z" />
+            </svg>
+            <svg v-else class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+            </svg>
+            Cambiar tema
+          </button>
+
+          <button
+            @click="logout"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-red-100 dark:hover:bg-red-900/30 text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+            Salir
+          </button>
         </div>
       </div>
-      <button @click="toggleTheme"
-        class="text-white dark:text- flex items-center gap-2 bg-blue-700 dark:bg-gray-800 rounded-lg px-3 py-2 hover:bg-blue-500 dark:hover:bg-gray-700 duration-300 transition-colors ease-in">
-        <svg v-if="colorMode.value !== 'dark'" class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-          viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M7.05 7.05L5.636 5.636M12 7a5 5 0 100 10 5 5 0 000-10z" />
-        </svg>
-        <svg v-else class="w-6 h-6 text-white fill-current" viewBox="0 0 20 20">
-          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-        </svg>
-        <span class="text-slate-200">Cambiar tema</span>
-      </button>
     </div>
-
   </header>
 </template>

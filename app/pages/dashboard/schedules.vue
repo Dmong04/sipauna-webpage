@@ -2,19 +2,27 @@
 definePageMeta({ middleware: 'auth' })
 
 interface Schedule {
-  id: string
+  scheduleId:    string
   classroomCode: string
-  day: string
-  startTime: string
-  endTime: string
-  subject: string
-  teacherName: string
+  day:           string
+  startTime:     string
+  endTime:       string
+  subject:       string
+  teacherName:   string
 }
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
 
+const DAY_COLORS: Record<string, string> = {
+  'Lunes':     'bg-blue-100   text-blue-700   dark:bg-blue-900/30   dark:text-blue-400',
+  'Martes':    'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+  'Miércoles': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  'Jueves':    'bg-amber-100  text-amber-700  dark:bg-amber-900/30  dark:text-amber-400',
+  'Viernes':   'bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-400',
+}
+
 const auth     = useAuthStore()
-const isAdmin  = computed(() => auth.user?.roleId === 1)
+const isAdmin  = computed(() => auth.user?.roleName === 'admin')
 
 const schedules  = ref<Schedule[]>([])
 const loading    = ref(false)
@@ -67,7 +75,7 @@ onMounted(fetchSchedules)
       <button
         @click="fetchSchedules"
         :disabled="loading"
-        class="self-start sm:self-auto flex items-center gap-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium py-2 px-4 rounded-md"
+        class="self-start sm:self-auto flex items-center gap-2 bg-red-500 hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium py-2 px-4 rounded-md transition-all duration-150"
       >
         <svg v-if="loading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -78,17 +86,18 @@ onMounted(fetchSchedules)
     </div>
 
     <!-- Error -->
-    <div v-if="error" class="mx-2 mb-4 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+    <div v-if="error" role="alert" class="mx-2 mb-4 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
       {{ error }}
     </div>
 
     <!-- Filtros -->
     <div class="mx-2 mb-4 flex flex-col sm:flex-row gap-3">
       <div class="w-full sm:w-48">
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Día</label>
+        <label for="filter-day" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Día</label>
         <select
+          id="filter-day"
           v-model="filterDay"
-          class="block w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-sm rounded-md py-2 px-3"
+          class="block w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition-colors"
         >
           <option value="">Todos los días</option>
           <option v-for="day in DAYS" :key="day" :value="day">{{ day }}</option>
@@ -96,10 +105,11 @@ onMounted(fetchSchedules)
       </div>
 
       <div class="w-full sm:w-48">
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aula</label>
+        <label for="filter-classroom" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aula</label>
         <select
+          id="filter-classroom"
           v-model="filterCode"
-          class="block w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-sm rounded-md py-2 px-3"
+          class="block w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition-colors"
         >
           <option value="">Todas las aulas</option>
           <option v-for="code in availableCodes" :key="code" :value="code">
@@ -142,10 +152,15 @@ onMounted(fetchSchedules)
             <tr
               v-else
               v-for="s in filtered"
-              :key="s.id"
+              :key="s.scheduleId"
               class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/60"
             >
-              <td class="px-4 py-3 font-medium text-gray-700 dark:text-gray-200">{{ s.day }}</td>
+              <td class="px-4 py-3">
+                <span :class="DAY_COLORS[s.day] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'"
+                  class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap">
+                  {{ s.day }}
+                </span>
+              </td>
               <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                 {{ s.startTime }} – {{ s.endTime }}
               </td>

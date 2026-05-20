@@ -1,15 +1,21 @@
 <template>
     <main class="m-4 **:transition-colors **:duration-300">
-        <!---Banner del about--->
-        <section class="bg-red-800 rounded-2xl dark:bg-red-950 text-white text-center py-12 px-6 mb-10">
-            <h1 class="font-medium text-2xl">Acerca de SIPAUNA</h1>
-            <p>
-                Sistema institucional para el prestamo de aulas de la Universidad Nacional de la sede chorotega
-            </p>
+        <!-- Banner del about -->
+        <section class="relative overflow-hidden bg-gradient-to-br from-red-700 via-red-800 to-red-900 dark:from-red-950 dark:via-gray-900 dark:to-gray-900 text-white rounded-2xl py-12 px-6 mb-10 text-center">
+            <div class="absolute inset-0 pointer-events-none">
+                <div class="absolute -top-12 -right-12 w-60 h-60 bg-white/5 rounded-full blur-3xl" />
+                <div class="absolute -bottom-8 -left-8 w-44 h-44 bg-red-400/15 rounded-full blur-2xl" />
+            </div>
+            <div class="relative">
+                <h1 class="font-bold text-3xl sm:text-4xl tracking-tight">Acerca de SIPAUNA</h1>
+                <p class="text-red-200 mt-2 text-sm sm:text-base max-w-lg mx-auto">
+                    Sistema institucional para el préstamo de aulas de la Universidad Nacional, Sede Chorotega
+                </p>
+            </div>
         </section>
 
         <section class="mb-10 mx-2">
-            <h2 class="font-medium text-red-900 border-b">Que es SIPAUNA</h2>
+            <h2 class="font-semibold text-red-800 dark:text-red-400 mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">¿Qué es SIPAUNA?</h2>
             <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
                 SIPAUNA es un sistema institucional
                 para el prestamo de aulas de la Universidad Nacional de la sede chorotega,
@@ -23,7 +29,7 @@
         </section>
 
         <section class="mb-10 mx-2">
-            <h2 class="font-medium text-red-900 border-b">Nuestros valores</h2>
+            <h2 class="font-semibold text-red-800 dark:text-red-400 mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">Nuestros valores</h2>
 
             <p class="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
                 En SIPAUNA, nuestros valores fundamentales guían cada aspecto de nuestro trabajo y definen quiénes somos

@@ -1,122 +1,277 @@
-import { users } from './data/users'
-import { classrooms } from './data/classrooms'
-import { schedules } from './data/schedules'
-import { bookings, type Booking, type BookingStatus } from './data/bookings'
+import { supabase } from '../utils/supabase'
 
-// Copias mutables de los datos mock
-let mockUsers = [...users]
-let mockClassrooms = [...classrooms]
-let mockSchedules = [...schedules]
-let mockBookings = [...bookings]
+const VALID_STATUSES = ['PENDIENTE', 'APROBADO', 'RECHAZADO', 'CANCELADO']
 
-let bookingCounter = mockBookings.length + 1
+// ── Helper: resolve display name for one or many userIds ──────────────────────
 
-const VALID_STATUSES: BookingStatus[] = ['pending', 'approved', 'rejected']
+async function getProfileFullNames(userIds: string[]): Promise<Record<string, string>> {
+  if (userIds.length === 0) return {}
+
+  const [admins, profs, students, guests] = await Promise.all([
+    supabase.from('Admin').select('userId, fullName').in('userId', userIds),
+    supabase.from('Professor').select('userId, fullName').in('userId', userIds),
+    supabase.from('Student').select('userId, fullName').in('userId', userIds),
+    supabase.from('Guest').select('userId, fullname').in('userId', userIds),
+  ])
+
+  const map: Record<string, string> = {}
+  admins.data?.forEach(r => { map[r.userId] = r.fullName })
+  profs.data?.forEach(r => { map[r.userId] = r.fullName })
+  students.data?.forEach(r => { map[r.userId] = r.fullName })
+  guests.data?.forEach(r => { map[r.userId] = r.fullname })
+  return map
+}
+
+// ── Mappers ───────────────────────────────────────────────────────────────────
+
+function mapClassroom(row: Record<string, any>) {
+  return {
+    classroomId: row.classroomId,
+    code:        row.code,
+    capacity:    row.capacity,
+  }
+}
+
+function mapSchedule(row: Record<string, any>) {
+  return {
+    scheduleId:    row.scheduleId,
+    classroomCode: row.Classroom?.code ?? '',
+    day:           row.day,
+    startTime:     row.startTime,
+    endTime:       row.endTime,
+    subject:       row.Course?.name ?? '',
+    teacherName:   row.Course?.Professor?.fullName ?? '',
+  }
+}
+
+function mapLoan(row: Record<string, any>, nameMap: Record<string, string>) {
+  return {
+    loanId:        row.loanId,
+    classroomCode: row.Classroom?.code ?? '',
+    userId:        row.userId,
+    requesterName: nameMap[row.userId] ?? 'Desconocido',
+    loanDate:      row.loanDate ? String(row.loanDate).slice(0, 10) : '',
+    startTime:     row.startTime,
+    endTime:       row.endTime,
+    reason:        row.reason,
+    status:        row.status,
+  }
+}
+
+// ── Resolvers ─────────────────────────────────────────────────────────────────
 
 export const resolvers = {
   Query: {
-    users: () => mockUsers,
-    user: (_: unknown, { userId }: { userId: string }) =>
-      mockUsers.find(u => u.userId === userId) ?? null,
+    users: async () => {
+      const { data, error } = await supabase
+        .from('User')
+        .select('userId, email, roleId, Role(name)')
+      if (error) throw new Error(error.message)
 
-    classrooms: () => mockClassrooms,
-    classroom: (_: unknown, { code }: { code: string }) =>
-      mockClassrooms.find(c => c.code === code) ?? null,
+      const userIds = (data as any[]).map(u => u.userId)
+      const nameMap = await getProfileFullNames(userIds)
 
-    schedules: () => mockSchedules,
+      return (data as any[]).map(u => ({
+        userId:   u.userId,
+        email:    u.email,
+        fullname: nameMap[u.userId] ?? 'Usuario',
+        roleId:   u.roleId,
+        roleName: u.Role?.name ?? '',
+      }))
+    },
 
-    bookings: () => mockBookings,
-    bookingsByUser: (_: unknown, { userId }: { userId: string }) =>
-      mockBookings.filter(b => b.requesterId === userId),
+    user: async (_: unknown, { userId }: { userId: string }) => {
+      const { data, error } = await supabase
+        .from('User')
+        .select('userId, email, roleId, Role(name)')
+        .eq('userId', userId)
+        .single()
+      if (error) return null
+
+      const nameMap = await getProfileFullNames([userId])
+      return {
+        userId,
+        email:    data.email,
+        fullname: nameMap[userId] ?? 'Usuario',
+        roleId:   (data as any).roleId,
+        roleName: (data as any).Role?.name ?? '',
+      }
+    },
+
+    classrooms: async () => {
+      const { data, error } = await supabase
+        .from('Classroom').select('*').order('code')
+      if (error) throw new Error(error.message)
+      return (data as any[]).map(mapClassroom)
+    },
+
+    classroom: async (_: unknown, { classroomId }: { classroomId: string }) => {
+      const { data, error } = await supabase
+        .from('Classroom').select('*').eq('classroomId', classroomId).single()
+      if (error) return null
+      return mapClassroom(data)
+    },
+
+    schedules: async () => {
+      const { data, error } = await supabase
+        .from('Schedule')
+        .select(`
+          scheduleId, day, startTime, endTime,
+          Classroom(code),
+          Course(name, Professor(fullName))
+        `)
+        .order('day')
+        .order('startTime')
+      if (error) throw new Error(error.message)
+      return (data as any[]).map(mapSchedule)
+    },
+
+    loans: async () => {
+      const { data, error } = await supabase
+        .from('Loan')
+        .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
+        .order('createdAt', { ascending: false })
+      if (error) throw new Error(error.message)
+
+      const userIds = [...new Set((data as any[]).map(l => l.userId))]
+      const nameMap = await getProfileFullNames(userIds)
+      return (data as any[]).map(l => mapLoan(l, nameMap))
+    },
+
+    loansByUser: async (_: unknown, { userId }: { userId: string }) => {
+      const { data, error } = await supabase
+        .from('Loan')
+        .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
+        .eq('userId', userId)
+        .order('createdAt', { ascending: false })
+      if (error) throw new Error(error.message)
+
+      const nameMap = await getProfileFullNames([userId])
+      return (data as any[]).map(l => mapLoan(l, nameMap))
+    },
   },
 
   Mutation: {
-    login: (_: unknown, { email, password }: { email: string; password: string }) => {
-      const user = mockUsers.find(u => u.email === email && u.password === password)
-      if (!user) throw new Error('Invalid credentials')
-      // TODO(producción): generar JWT firmado con secret real
-      const token = `mock-token-${user.userId}`
-      return { token, user }
+    login: async (_: unknown, { email, password }: { email: string; password: string }) => {
+      const { data, error } = await supabase
+        .from('User')
+        .select('userId, email, roleId, Role(name)')
+        .eq('email', email)
+        .eq('password', password)
+        .single()
+
+      if (error || !data) throw new Error('Credenciales incorrectas')
+
+      const nameMap = await getProfileFullNames([(data as any).userId])
+      const token   = `token-${(data as any).userId}-${Date.now()}`
+
+      return {
+        token,
+        user: {
+          userId:   (data as any).userId,
+          email:    (data as any).email,
+          fullname: nameMap[(data as any).userId] ?? 'Usuario',
+          roleId:   (data as any).roleId,
+          roleName: (data as any).Role?.name ?? '',
+        },
+      }
     },
 
-    createClassroom: (
+    createClassroom: async (
       _: unknown,
-      { code, name, capacity }: { code: string; name: string; capacity: number }
+      { code, capacity }: { code: string; capacity: number }
     ) => {
-      if (mockClassrooms.some(c => c.code === code))
-        throw new Error('Ya existe un aula con ese código')
-      const classroom = { code, name, capacity }
-      mockClassrooms.push(classroom)
-      return classroom
+      const { data, error } = await supabase
+        .from('Classroom').insert({ code, capacity }).select().single()
+      if (error) throw new Error(error.message)
+      return mapClassroom(data)
     },
 
-    updateClassroom: (
+    updateClassroom: async (
       _: unknown,
-      { code, name, capacity }: { code: string; name?: string; capacity?: number }
+      { classroomId, code, capacity }: { classroomId: string; code?: string; capacity?: number }
     ) => {
-      const classroom = mockClassrooms.find(c => c.code === code)
-      if (!classroom) throw new Error('Aula no encontrada')
-      if (name !== undefined) classroom.name = name
-      if (capacity !== undefined) classroom.capacity = capacity
-      return classroom
+      const updates: Record<string, any> = {}
+      if (code     !== undefined) updates.code     = code
+      if (capacity !== undefined) updates.capacity = capacity
+
+      const { data, error } = await supabase
+        .from('Classroom').update(updates).eq('classroomId', classroomId).select().single()
+      if (error) throw new Error('Aula no encontrada')
+      return mapClassroom(data)
     },
 
-    deleteClassroom: (_: unknown, { code }: { code: string }) => {
-      const index = mockClassrooms.findIndex(c => c.code === code)
-      if (index === -1) throw new Error('Aula no encontrada')
-      mockClassrooms.splice(index, 1)
+    deleteClassroom: async (_: unknown, { classroomId }: { classroomId: string }) => {
+      const { error } = await supabase
+        .from('Classroom').delete().eq('classroomId', classroomId)
+      if (error) throw new Error('Aula no encontrada')
       return true
     },
 
-    createBooking: (
+    createLoan: async (
       _: unknown,
       args: {
         classroomCode: string
-        requesterId: string
-        requesterName: string
-        date: string
-        startTime: string
-        endTime: string
-        reason: string
+        userId:        string
+        loanDate:      string
+        startTime:     string
+        endTime:       string
+        reason:        string
       }
     ) => {
-      const { classroomCode, requesterId, requesterName, date, startTime, endTime, reason } = args
-
-      if (!mockClassrooms.some(c => c.code === classroomCode))
-        throw new Error('Aula no encontrada')
+      const { classroomCode, userId, loanDate, startTime, endTime, reason } = args
 
       if (startTime >= endTime)
         throw new Error('La hora de inicio debe ser anterior a la hora de fin')
 
-      // TODO(producción): derivar requesterId del JWT verificado, no del cliente
-      const booking: Booking = {
-        id: `b${bookingCounter++}`,
-        classroomCode,
-        requesterId,
-        requesterName,
-        date,
-        startTime,
-        endTime,
-        reason,
-        status: 'pending',
-      }
+      // Validar que el userId existe
+      const { data: userCheck } = await supabase
+        .from('User').select('userId').eq('userId', userId).maybeSingle()
+      if (!userCheck) throw new Error('Sesión inválida. Por favor cerrá sesión e iniciá de nuevo.')
 
-      mockBookings.push(booking)
-      return booking
+      // Resolver code → classroomId
+      const { data: cls, error: clsErr } = await supabase
+        .from('Classroom').select('classroomId').eq('code', classroomCode).single()
+      if (clsErr || !cls) throw new Error('Aula no encontrada')
+
+      const { data, error } = await supabase
+        .from('Loan')
+        .insert({
+          classroomId: (cls as any).classroomId,
+          userId,
+          loanDate:    `${loanDate}T00:00:00`,
+          startTime,
+          endTime,
+          reason,
+          status: 'PENDIENTE',
+        })
+        .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
+        .single()
+
+      if (error) throw new Error(error.message)
+
+      const nameMap = await getProfileFullNames([userId])
+      return mapLoan(data as any, nameMap)
     },
 
-    updateBookingStatus: (
+    updateLoanStatus: async (
       _: unknown,
-      { id, status }: { id: string; status: string }
+      { loanId, status }: { loanId: string; status: string }
     ) => {
-      if (!VALID_STATUSES.includes(status as BookingStatus))
+      if (!VALID_STATUSES.includes(status))
         throw new Error('Estado inválido')
 
-      const booking = mockBookings.find(b => b.id === id)
-      if (!booking) throw new Error('Reservación no encontrada')
+      const { data, error } = await supabase
+        .from('Loan')
+        .update({ status })
+        .eq('loanId', loanId)
+        .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
+        .single()
 
-      booking.status = status as BookingStatus
-      return booking
+      if (error) throw new Error('Préstamo no encontrado')
+
+      const nameMap = await getProfileFullNames([(data as any).userId])
+      return mapLoan(data as any, nameMap)
     },
   },
 }

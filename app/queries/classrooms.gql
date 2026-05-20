@@ -1,7 +1,7 @@
-query getClassrooms{
-    classrooms{
-        code
-        name
-        capacity
-    }
+query getClassrooms {
+  classrooms {
+    classroomId
+    code
+    capacity
+  }
 }
