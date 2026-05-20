@@ -1,62 +1,64 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' })
 
-type BookingStatus = 'pending' | 'approved' | 'rejected'
+type LoanStatus = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'CANCELADO'
 
-interface Booking {
-  id: string
+interface Loan {
+  loanId:        string
   classroomCode: string
-  requesterId: string
+  userId:        string
   requesterName: string
-  date: string
-  startTime: string
-  endTime: string
-  reason: string
-  status: BookingStatus
+  loanDate:      string
+  startTime:     string
+  endTime:       string
+  reason:        string
+  status:        LoanStatus
 }
 
 interface Classroom {
-  code: string
-  name: string
-  capacity: number
+  classroomId: string
+  code:        string
+  capacity:    number
 }
 
-interface BookingForm {
+interface LoanForm {
   classroomCode: string
-  date: string
-  startTime: string
-  endTime: string
-  reason: string
+  date:          string
+  startTime:     string
+  endTime:       string
+  reason:        string
 }
 
-const STATUS_LABELS: Record<BookingStatus, string> = {
-  pending:  'En espera',
-  approved: 'Aprobada',
-  rejected: 'Rechazada',
+const STATUS_LABELS: Record<LoanStatus, string> = {
+  PENDIENTE:  'En espera',
+  APROBADO:   'Aprobada',
+  RECHAZADO:  'Rechazada',
+  CANCELADO:  'Cancelada',
 }
 
-const STATUS_CLASSES: Record<BookingStatus, string> = {
-  pending:  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  approved: 'bg-green-100  text-green-700  dark:bg-green-900/30  dark:text-green-400',
-  rejected: 'bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-400',
+const STATUS_CLASSES: Record<LoanStatus, string> = {
+  PENDIENTE:  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  APROBADO:   'bg-green-100  text-green-700  dark:bg-green-900/30  dark:text-green-400',
+  RECHAZADO:  'bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-400',
+  CANCELADO:  'bg-gray-100   text-gray-500   dark:bg-gray-700/50   dark:text-gray-400',
 }
 
-const auth     = useAuthStore()
-const isAdmin  = computed(() => auth.user?.roleId === 1)
+const auth    = useAuthStore()
+const isAdmin = computed(() => auth.user?.roleName === 'admin')
 
 // ── Estado compartido ──
-const bookings   = ref<Booking[]>([])
+const bookings   = ref<Loan[]>([])
 const classrooms = ref<Classroom[]>([])
 const loadingData = ref(false)
 const globalError = ref('')
 
 // ── Estado del formulario (solo rol no-admin) ──
-const form = reactive<BookingForm>({
+const form = reactive<LoanForm>({
   classroomCode: '',
-  date: '',
-  startTime: '',
-  endTime: '',
-  reason: '',
+  date:          '',
+  startTime:     '',
+  endTime:       '',
+  reason:        '',
 })
 const formError    = ref('')
 const formSuccess  = ref('')
@@ -73,18 +75,18 @@ async function fetchData() {
   loadingData.value  = true
 
   try {
-    const [classroomsResult, bookingsResult] = await Promise.all([
+    const [classroomsResult, loansResult] = await Promise.all([
       GqlGetClassrooms(),
       isAdmin.value
-        ? GqlGetBookings()
-        : GqlGetBookingsByUser({ userId: auth.user!.userId }),
+        ? GqlGetLoans()
+        : GqlGetLoansByUser({ userId: auth.user!.userId }),
     ])
 
     classrooms.value = classroomsResult.classrooms ?? []
     bookings.value   = (isAdmin.value
-      ? (bookingsResult as Awaited<ReturnType<typeof GqlGetBookings>>).bookings
-      : (bookingsResult as Awaited<ReturnType<typeof GqlGetBookingsByUser>>).bookingsByUser
-    ) ?? []
+      ? (loansResult as Awaited<ReturnType<typeof GqlGetLoans>>).loans
+      : (loansResult as Awaited<ReturnType<typeof GqlGetLoansByUser>>).loansByUser
+    ) ?? [] as Loan[]
 
   } catch {
     globalError.value = 'Error al cargar los datos. Intente nuevamente.'
@@ -120,14 +122,13 @@ async function submitBooking() {
   submitting.value = true
 
   try {
-    await GqlCreateBooking({
-      classroomCode:  form.classroomCode,
-      requesterId:    auth.user.userId,
-      requesterName:  auth.user.fullname,
-      date:           form.date,
-      startTime:      form.startTime,
-      endTime:        form.endTime,
-      reason:         form.reason.trim(),
+    await GqlCreateLoan({
+      classroomCode: form.classroomCode,
+      userId:        auth.user.userId,
+      loanDate:      form.date,
+      startTime:     form.startTime,
+      endTime:       form.endTime,
+      reason:        form.reason.trim(),
     })
 
     formSuccess.value = 'Solicitud enviada. Queda en espera de aprobación.'
@@ -149,22 +150,18 @@ async function submitBooking() {
   }
 }
 
-async function updateStatus(id: string, status: BookingStatus) {
-  updatingId.value = id
+async function updateStatus(loanId: string, status: LoanStatus) {
+  updatingId.value = loanId
 
   try {
-    await GqlUpdateBookingStatus({ id, status })
-    const booking = bookings.value.find(b => b.id === id)
-    if (booking) booking.status = status
+    await GqlUpdateLoanStatus({ loanId, status })
+    const loan = bookings.value.find(b => b.loanId === loanId)
+    if (loan) loan.status = status
   } catch {
     globalError.value = 'No se pudo actualizar el estado.'
   } finally {
     updatingId.value = null
   }
-}
-
-function classroomName(code: string): string {
-  return classrooms.value.find(c => c.code === code)?.name ?? code
 }
 
 onMounted(fetchData)
@@ -210,8 +207,8 @@ onMounted(fetchData)
               class="block w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition-colors"
             >
               <option value="" disabled>Seleccione un aula</option>
-              <option v-for="c in classrooms" :key="c.code" :value="c.code">
-                {{ c.name }} (cap. {{ c.capacity }})
+              <option v-for="c in classrooms" :key="c.classroomId" :value="c.code">
+                Aula {{ c.code }} (cap. {{ c.capacity }})
               </option>
             </select>
           </div>
@@ -302,15 +299,15 @@ onMounted(fetchData)
           <ul v-else class="divide-y divide-gray-100 dark:divide-white/5">
             <li
               v-for="b in bookings"
-              :key="b.id"
+              :key="b.loanId"
               class="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
             >
               <div>
                 <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
-                  {{ classroomName(b.classroomCode) }}
+                  Aula {{ b.classroomCode }}
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {{ b.date }} · {{ b.startTime }}–{{ b.endTime }}
+                  {{ b.loanDate }} · {{ b.startTime }}–{{ b.endTime }}
                 </p>
                 <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate max-w-xs">{{ b.reason }}</p>
               </div>
@@ -392,7 +389,7 @@ onMounted(fetchData)
                     {{ b.classroomCode }}
                   </span>
                 </td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ b.date }}</td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ b.loanDate }}</td>
                 <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                   {{ b.startTime }}–{{ b.endTime }}
                 </td>
@@ -410,22 +407,22 @@ onMounted(fetchData)
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-1.5">
                     <button
-                      v-if="b.status !== 'approved'"
-                      @click="updateStatus(b.id, 'approved')"
-                      :disabled="updatingId === b.id"
+                      v-if="b.status !== 'APROBADO'"
+                      @click="updateStatus(b.loanId, 'APROBADO')"
+                      :disabled="updatingId === b.loanId"
                       class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 active:scale-95 disabled:opacity-40 transition-all duration-150"
                     >
                       Aprobar
                     </button>
                     <button
-                      v-if="b.status !== 'rejected'"
-                      @click="updateStatus(b.id, 'rejected')"
-                      :disabled="updatingId === b.id"
+                      v-if="b.status !== 'RECHAZADO'"
+                      @click="updateStatus(b.loanId, 'RECHAZADO')"
+                      :disabled="updatingId === b.loanId"
                       class="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 active:scale-95 disabled:opacity-40 transition-all duration-150"
                     >
                       Rechazar
                     </button>
-                    <svg v-if="updatingId === b.id" class="animate-spin h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24">
+                    <svg v-if="updatingId === b.loanId" class="animate-spin h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                     </svg>

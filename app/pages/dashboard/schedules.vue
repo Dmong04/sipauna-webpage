@@ -2,13 +2,13 @@
 definePageMeta({ middleware: 'auth' })
 
 interface Schedule {
-  id: string
+  scheduleId:    string
   classroomCode: string
-  day: string
-  startTime: string
-  endTime: string
-  subject: string
-  teacherName: string
+  day:           string
+  startTime:     string
+  endTime:       string
+  subject:       string
+  teacherName:   string
 }
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
@@ -22,7 +22,7 @@ const DAY_COLORS: Record<string, string> = {
 }
 
 const auth     = useAuthStore()
-const isAdmin  = computed(() => auth.user?.roleId === 1)
+const isAdmin  = computed(() => auth.user?.roleName === 'admin')
 
 const schedules  = ref<Schedule[]>([])
 const loading    = ref(false)
@@ -152,7 +152,7 @@ onMounted(fetchSchedules)
             <tr
               v-else
               v-for="s in filtered"
-              :key="s.id"
+              :key="s.scheduleId"
               class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/60"
             >
               <td class="px-4 py-3">

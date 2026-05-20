@@ -1,6 +1,6 @@
 query getSchedules {
   schedules {
-    id
+    scheduleId
     classroomCode
     day
     startTime

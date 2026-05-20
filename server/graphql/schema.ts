@@ -1,68 +1,77 @@
 export const typeDefs = `
+  # ── Types ────────────────────────────────────────────────────────────────────
+
   type User {
-    userId: ID!
+    userId:   ID!
+    email:    String!
     fullname: String!
-    email: String!
-    roleId: Int!
+    roleId:   String!
+    roleName: String!
   }
 
   type AuthPayload {
     token: String!
-    user: User!
+    user:  User!
   }
 
   type Classroom {
-    code: ID!
-    name: String!
-    capacity: Int!
+    classroomId: ID!
+    code:        String!
+    capacity:    Int!
   }
 
   type Schedule {
-    id: ID!
-    classroomCode: ID!
-    day: String!
-    startTime: String!
-    endTime: String!
-    subject: String!
-    teacherName: String!
+    scheduleId:    ID!
+    classroomCode: String!
+    day:           String!
+    startTime:     String!
+    endTime:       String!
+    subject:       String!
+    teacherName:   String!
   }
 
-  type Booking {
-    id: ID!
-    classroomCode: ID!
-    requesterId: ID!
+  type Loan {
+    loanId:        ID!
+    classroomCode: String!
+    userId:        ID!
     requesterName: String!
-    date: String!
-    startTime: String!
-    endTime: String!
-    reason: String!
-    status: String!
+    loanDate:      String!
+    startTime:     String!
+    endTime:       String!
+    reason:        String!
+    status:        String!
   }
+
+  # ── Queries ──────────────────────────────────────────────────────────────────
 
   type Query {
-    users: [User!]!
-    user(userId: ID!): User
-    classrooms: [Classroom!]!
-    classroom(code: ID!): Classroom
-    schedules: [Schedule!]!
-    bookings: [Booking!]!
-    bookingsByUser(userId: ID!): [Booking!]!
+    users:                       [User!]!
+    user(userId: ID!):           User
+    classrooms:                  [Classroom!]!
+    classroom(classroomId: ID!): Classroom
+    schedules:                   [Schedule!]!
+    loans:                       [Loan!]!
+    loansByUser(userId: ID!):    [Loan!]!
   }
+
+  # ── Mutations ────────────────────────────────────────────────────────────────
 
   type Mutation {
     login(email: String!, password: String!): AuthPayload
-    createClassroom(code: ID!, name: String!, capacity: Int!): Classroom
-    updateClassroom(code: ID!, name: String, capacity: Int): Classroom
-    deleteClassroom(code: ID!): Boolean
-    createBooking(
-      classroomCode: ID!
-      requesterId: ID!
-      requesterName: String!
-      date: String!
-      startTime: String!
-      endTime: String!
-      reason: String!
-    ): Booking
-    updateBookingStatus(id: ID!, status: String!): Booking
+
+    createClassroom(code: String!, capacity: Int!): Classroom
+    updateClassroom(classroomId: ID!, code: String, capacity: Int): Classroom
+    deleteClassroom(classroomId: ID!): Boolean
+
+    createLoan(
+      classroomCode: String!
+      userId:        ID!
+      loanDate:      String!
+      startTime:     String!
+      endTime:       String!
+      reason:        String!
+    ): Loan
+
+    updateLoanStatus(loanId: ID!, status: String!): Loan
   }
 `
