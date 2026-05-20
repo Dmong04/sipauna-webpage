@@ -1,14 +1,27 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+html {
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+}
+
 body {
   @apply bg-white dark:bg-gray-900 transition-colors duration-300;
 }
 
-html {
-  overflow-y: scroll;
-}
-
 .nav-link {
   transition: color 300ms, text-decoration 300ms 300ms;
+}
+
+*:focus-visible {
+  @apply outline-none ring-2 ring-red-400 ring-offset-2;
+}
+
+::selection {
+  @apply bg-red-500/20 text-red-900;
+}
+
+.dark ::selection {
+  @apply bg-red-500/30 text-red-100;
 }

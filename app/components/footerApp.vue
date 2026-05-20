@@ -3,9 +3,8 @@ const showModal = ref(false)
 </script>
 
 <template>
-    <footer
-        class="px-6 border-t border-gray-200 dark:border-gray-800 md:px-16 lg:px-24 xl:px-32 pt-8 w-full text-gray-500">
-        <div class="flex flex-col md:flex-row justify-between w-full gap-10 ">
+    <footer class="border-t border-gray-200 dark:border-gray-800 pt-8 w-full text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between w-full gap-10">
             <div class="md:max-w-96">
                 <div class="flex items-center">
                     <img src="/img/LogoUNA.png" alt="Logo" class="h-32 w-40">
@@ -48,15 +47,15 @@ const showModal = ref(false)
                             y si gustarías apoyarnos.</p>
                         <div class="flex items-center gap-2 pt-4">
                             <input
-                                class="border dark:border-white border-gray-500/30 dark:placeholder-white placeholder-gray-500 focus:ring-2 ring-red-500 outline-none w-full max-w-64 h-9 rounded-lg px-2"
-                                type="email" placeholder="Digita tu correo institucional">
+                                class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 outline-none w-full max-w-64 h-9 rounded-lg px-3 text-sm transition-colors"
+                                type="email" placeholder="Correo institucional">
                             <button class="bg-red-500 w-24 h-9 text-white rounded-lg">Enviar</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <p class="pt-4 text-center text-sm dark:text-white md:text-sm pb-5">
+        <p class="pt-4 text-center text-sm dark:text-white/70 md:text-sm pb-5 max-w-7xl mx-auto px-4">
             Copyright 2026 &copy;SIPAUNA. Todos los derechos reservados.
         </p>
     </footer>
