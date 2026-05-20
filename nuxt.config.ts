@@ -8,10 +8,18 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 export default defineNuxtConfig({
   modules: [
     '@nuxtjs/color-mode',
-    'nuxt-graphql-client',
     '@pinia/nuxt',
-    '@vite-pwa/nuxt'
+    '@vite-pwa/nuxt',
+    '@nuxtjs/supabase'
   ],
+  // @ts-ignore
+  supabase: {
+    redirectOptions: {
+      login: '/login',
+      callback: '/confirm',
+      exclude: ['/'],
+    }
+  },
   pwa: {
     strategies: "injectManifest",
     srcDir: resolve(__dirname, "public"),
@@ -140,22 +148,15 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['./app/assets/css/main.css'],
   vite: {
-    assetsInclude: ['**/*.graphql'],
     plugins: [
       tailwindcss(),
     ],
-  },
-  runtimeConfig: {
-    public: {
-      GQL_HOST: 'http://localhost:3000/api/graphql'
+    optimizeDeps: {
+      include: [
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        'workbox-window',
+      ]
     }
   },
-  'graphql-client': {
-    clients: {
-      default: {
-        host: 'http://localhost:3000/api/graphql',
-        schema: resolve(__dirname, 'server/graphql/schema.graphql'),
-      }
-    }
-  }
 })
