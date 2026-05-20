@@ -1,10 +1,10 @@
-query getBookings {
-  bookings {
-    id
+query getLoans {
+  loans {
+    loanId
     classroomCode
-    requesterId
+    userId
     requesterName
-    date
+    loanDate
     startTime
     endTime
     reason
@@ -12,13 +12,13 @@ query getBookings {
   }
 }
 
-query getBookingsByUser($userId: ID!) {
-  bookingsByUser(userId: $userId) {
-    id
+query getLoansByUser($userId: ID!) {
+  loansByUser(userId: $userId) {
+    loanId
     classroomCode
-    requesterId
+    userId
     requesterName
-    date
+    loanDate
     startTime
     endTime
     reason
@@ -26,32 +26,30 @@ query getBookingsByUser($userId: ID!) {
   }
 }
 
-mutation createBooking(
-  $classroomCode: ID!
-  $requesterId: ID!
-  $requesterName: String!
-  $date: String!
+mutation createLoan(
+  $classroomCode: String!
+  $userId: ID!
+  $loanDate: String!
   $startTime: String!
   $endTime: String!
   $reason: String!
 ) {
-  createBooking(
+  createLoan(
     classroomCode: $classroomCode
-    requesterId: $requesterId
-    requesterName: $requesterName
-    date: $date
+    userId: $userId
+    loanDate: $loanDate
     startTime: $startTime
     endTime: $endTime
     reason: $reason
   ) {
-    id
+    loanId
     status
   }
 }
 
-mutation updateBookingStatus($id: ID!, $status: String!) {
-  updateBookingStatus(id: $id, status: $status) {
-    id
+mutation updateLoanStatus($loanId: ID!, $status: String!) {
+  updateLoanStatus(loanId: $loanId, status: $status) {
+    loanId
     status
   }
 }

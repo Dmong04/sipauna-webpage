@@ -154,8 +154,8 @@ const handleSubmit = async () => {
               </svg>
             </div>
             <div>
-              <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ aula.name }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">ID: {{ aula.code }} · Capacidad: {{ aula.capacity }} personas</p>
+              <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">Aula {{ aula.code }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Capacidad: {{ aula.capacity }} personas</p>
             </div>
           </div>
           <span class="shrink-0 text-xs font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">

@@ -1,198 +1,277 @@
 import { supabase } from '../utils/supabase'
 
-const VALID_STATUSES = ['pending', 'approved', 'rejected']
+const VALID_STATUSES = ['PENDIENTE', 'APROBADO', 'RECHAZADO', 'CANCELADO']
 
-// ── Mappers DB (snake_case) → GraphQL (camelCase) ──────────────────────────
+// ── Helper: resolve display name for one or many userIds ──────────────────────
 
-function mapUser(row: Record<string, any>) {
-  return {
-    userId:   row.user_id,
-    fullname: row.fullname,
-    email:    row.email,
-    roleId:   row.role_id,
-  }
+async function getProfileFullNames(userIds: string[]): Promise<Record<string, string>> {
+  if (userIds.length === 0) return {}
+
+  const [admins, profs, students, guests] = await Promise.all([
+    supabase.from('Admin').select('userId, fullName').in('userId', userIds),
+    supabase.from('Professor').select('userId, fullName').in('userId', userIds),
+    supabase.from('Student').select('userId, fullName').in('userId', userIds),
+    supabase.from('Guest').select('userId, fullname').in('userId', userIds),
+  ])
+
+  const map: Record<string, string> = {}
+  admins.data?.forEach(r => { map[r.userId] = r.fullName })
+  profs.data?.forEach(r => { map[r.userId] = r.fullName })
+  students.data?.forEach(r => { map[r.userId] = r.fullName })
+  guests.data?.forEach(r => { map[r.userId] = r.fullname })
+  return map
 }
+
+// ── Mappers ───────────────────────────────────────────────────────────────────
 
 function mapClassroom(row: Record<string, any>) {
   return {
-    code:     row.code,
-    name:     row.name,
-    capacity: row.capacity,
+    classroomId: row.classroomId,
+    code:        row.code,
+    capacity:    row.capacity,
   }
 }
 
 function mapSchedule(row: Record<string, any>) {
   return {
-    id:            row.id,
-    classroomCode: row.classroom_code,
+    scheduleId:    row.scheduleId,
+    classroomCode: row.Classroom?.code ?? '',
     day:           row.day,
-    startTime:     row.start_time,
-    endTime:       row.end_time,
-    subject:       row.subject,
-    teacherName:   row.teacher_name,
+    startTime:     row.startTime,
+    endTime:       row.endTime,
+    subject:       row.Course?.name ?? '',
+    teacherName:   row.Course?.Professor?.fullName ?? '',
   }
 }
 
-function mapBooking(row: Record<string, any>) {
+function mapLoan(row: Record<string, any>, nameMap: Record<string, string>) {
   return {
-    id:            row.id,
-    classroomCode: row.classroom_code,
-    requesterId:   row.requester_id,
-    requesterName: row.requester_name,
-    date:          row.date,
-    startTime:     row.start_time,
-    endTime:       row.end_time,
+    loanId:        row.loanId,
+    classroomCode: row.Classroom?.code ?? '',
+    userId:        row.userId,
+    requesterName: nameMap[row.userId] ?? 'Desconocido',
+    loanDate:      row.loanDate ? String(row.loanDate).slice(0, 10) : '',
+    startTime:     row.startTime,
+    endTime:       row.endTime,
     reason:        row.reason,
     status:        row.status,
   }
 }
 
-// ── Resolvers ──────────────────────────────────────────────────────────────
+// ── Resolvers ─────────────────────────────────────────────────────────────────
 
 export const resolvers = {
   Query: {
     users: async () => {
-      const { data, error } = await supabase.from('users').select('*')
+      const { data, error } = await supabase
+        .from('User')
+        .select('userId, email, roleId, Role(name)')
       if (error) throw new Error(error.message)
-      return data.map(mapUser)
+
+      const userIds = (data as any[]).map(u => u.userId)
+      const nameMap = await getProfileFullNames(userIds)
+
+      return (data as any[]).map(u => ({
+        userId:   u.userId,
+        email:    u.email,
+        fullname: nameMap[u.userId] ?? 'Usuario',
+        roleId:   u.roleId,
+        roleName: u.Role?.name ?? '',
+      }))
     },
 
     user: async (_: unknown, { userId }: { userId: string }) => {
       const { data, error } = await supabase
-        .from('users').select('*').eq('user_id', userId).single()
+        .from('User')
+        .select('userId, email, roleId, Role(name)')
+        .eq('userId', userId)
+        .single()
       if (error) return null
-      return mapUser(data)
+
+      const nameMap = await getProfileFullNames([userId])
+      return {
+        userId,
+        email:    data.email,
+        fullname: nameMap[userId] ?? 'Usuario',
+        roleId:   (data as any).roleId,
+        roleName: (data as any).Role?.name ?? '',
+      }
     },
 
     classrooms: async () => {
-      const { data, error } = await supabase.from('classrooms').select('*').order('name')
+      const { data, error } = await supabase
+        .from('Classroom').select('*').order('code')
       if (error) throw new Error(error.message)
-      return data.map(mapClassroom)
+      return (data as any[]).map(mapClassroom)
     },
 
-    classroom: async (_: unknown, { code }: { code: string }) => {
+    classroom: async (_: unknown, { classroomId }: { classroomId: string }) => {
       const { data, error } = await supabase
-        .from('classrooms').select('*').eq('code', code).single()
+        .from('Classroom').select('*').eq('classroomId', classroomId).single()
       if (error) return null
       return mapClassroom(data)
     },
 
     schedules: async () => {
       const { data, error } = await supabase
-        .from('schedules').select('*').order('day').order('start_time')
+        .from('Schedule')
+        .select(`
+          scheduleId, day, startTime, endTime,
+          Classroom(code),
+          Course(name, Professor(fullName))
+        `)
+        .order('day')
+        .order('startTime')
       if (error) throw new Error(error.message)
-      return data.map(mapSchedule)
+      return (data as any[]).map(mapSchedule)
     },
 
-    bookings: async () => {
+    loans: async () => {
       const { data, error } = await supabase
-        .from('bookings').select('*').order('created_at', { ascending: false })
+        .from('Loan')
+        .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
+        .order('createdAt', { ascending: false })
       if (error) throw new Error(error.message)
-      return data.map(mapBooking)
+
+      const userIds = [...new Set((data as any[]).map(l => l.userId))]
+      const nameMap = await getProfileFullNames(userIds)
+      return (data as any[]).map(l => mapLoan(l, nameMap))
     },
 
-    bookingsByUser: async (_: unknown, { userId }: { userId: string }) => {
+    loansByUser: async (_: unknown, { userId }: { userId: string }) => {
       const { data, error } = await supabase
-        .from('bookings').select('*')
-        .eq('requester_id', userId)
-        .order('created_at', { ascending: false })
+        .from('Loan')
+        .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
+        .eq('userId', userId)
+        .order('createdAt', { ascending: false })
       if (error) throw new Error(error.message)
-      return data.map(mapBooking)
+
+      const nameMap = await getProfileFullNames([userId])
+      return (data as any[]).map(l => mapLoan(l, nameMap))
     },
   },
 
   Mutation: {
     login: async (_: unknown, { email, password }: { email: string; password: string }) => {
       const { data, error } = await supabase
-        .from('users').select('*')
+        .from('User')
+        .select('userId, email, roleId, Role(name)')
         .eq('email', email)
         .eq('password', password)
         .single()
 
       if (error || !data) throw new Error('Credenciales incorrectas')
 
-      // TODO(producción): reemplazar con JWT firmado usando un secret seguro
-      const token = `token-${data.user_id}-${Date.now()}`
-      return { token, user: mapUser(data) }
+      const nameMap = await getProfileFullNames([(data as any).userId])
+      const token   = `token-${(data as any).userId}-${Date.now()}`
+
+      return {
+        token,
+        user: {
+          userId:   (data as any).userId,
+          email:    (data as any).email,
+          fullname: nameMap[(data as any).userId] ?? 'Usuario',
+          roleId:   (data as any).roleId,
+          roleName: (data as any).Role?.name ?? '',
+        },
+      }
     },
 
     createClassroom: async (
       _: unknown,
-      { code, name, capacity }: { code: string; name: string; capacity: number }
+      { code, capacity }: { code: string; capacity: number }
     ) => {
       const { data, error } = await supabase
-        .from('classrooms').insert({ code, name, capacity }).select().single()
+        .from('Classroom').insert({ code, capacity }).select().single()
       if (error) throw new Error(error.message)
       return mapClassroom(data)
     },
 
     updateClassroom: async (
       _: unknown,
-      { code, name, capacity }: { code: string; name?: string; capacity?: number }
+      { classroomId, code, capacity }: { classroomId: string; code?: string; capacity?: number }
     ) => {
       const updates: Record<string, any> = {}
-      if (name !== undefined)     updates.name     = name
+      if (code     !== undefined) updates.code     = code
       if (capacity !== undefined) updates.capacity = capacity
 
       const { data, error } = await supabase
-        .from('classrooms').update(updates).eq('code', code).select().single()
+        .from('Classroom').update(updates).eq('classroomId', classroomId).select().single()
       if (error) throw new Error('Aula no encontrada')
       return mapClassroom(data)
     },
 
-    deleteClassroom: async (_: unknown, { code }: { code: string }) => {
-      const { error } = await supabase.from('classrooms').delete().eq('code', code)
+    deleteClassroom: async (_: unknown, { classroomId }: { classroomId: string }) => {
+      const { error } = await supabase
+        .from('Classroom').delete().eq('classroomId', classroomId)
       if (error) throw new Error('Aula no encontrada')
       return true
     },
 
-    createBooking: async (
+    createLoan: async (
       _: unknown,
       args: {
         classroomCode: string
-        requesterId:   string
-        requesterName: string
-        date:          string
+        userId:        string
+        loanDate:      string
         startTime:     string
         endTime:       string
         reason:        string
       }
     ) => {
-      const { classroomCode, requesterId, requesterName, date, startTime, endTime, reason } = args
+      const { classroomCode, userId, loanDate, startTime, endTime, reason } = args
 
       if (startTime >= endTime)
         throw new Error('La hora de inicio debe ser anterior a la hora de fin')
 
+      // Validar que el userId existe
+      const { data: userCheck } = await supabase
+        .from('User').select('userId').eq('userId', userId).maybeSingle()
+      if (!userCheck) throw new Error('Sesión inválida. Por favor cerrá sesión e iniciá de nuevo.')
+
+      // Resolver code → classroomId
+      const { data: cls, error: clsErr } = await supabase
+        .from('Classroom').select('classroomId').eq('code', classroomCode).single()
+      if (clsErr || !cls) throw new Error('Aula no encontrada')
+
       const { data, error } = await supabase
-        .from('bookings')
+        .from('Loan')
         .insert({
-          classroom_code: classroomCode,
-          requester_id:   requesterId,
-          requester_name: requesterName,
-          date,
-          start_time: startTime,
-          end_time:   endTime,
+          classroomId: (cls as any).classroomId,
+          userId,
+          loanDate:    `${loanDate}T00:00:00`,
+          startTime,
+          endTime,
           reason,
-          status: 'pending',
+          status: 'PENDIENTE',
         })
-        .select()
+        .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
         .single()
 
       if (error) throw new Error(error.message)
-      return mapBooking(data)
+
+      const nameMap = await getProfileFullNames([userId])
+      return mapLoan(data as any, nameMap)
     },
 
-    updateBookingStatus: async (
+    updateLoanStatus: async (
       _: unknown,
-      { id, status }: { id: string; status: string }
+      { loanId, status }: { loanId: string; status: string }
     ) => {
       if (!VALID_STATUSES.includes(status))
         throw new Error('Estado inválido')
 
       const { data, error } = await supabase
-        .from('bookings').update({ status }).eq('id', id).select().single()
-      if (error) throw new Error('Reservación no encontrada')
-      return mapBooking(data)
+        .from('Loan')
+        .update({ status })
+        .eq('loanId', loanId)
+        .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
+        .single()
+
+      if (error) throw new Error('Préstamo no encontrado')
+
+      const nameMap = await getProfileFullNames([(data as any).userId])
+      return mapLoan(data as any, nameMap)
     },
   },
 }
