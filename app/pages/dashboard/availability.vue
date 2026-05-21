@@ -25,10 +25,12 @@ const handleSubmit = async () => {
 <template>
   <section class="flex flex-col lg:flex-row m-4 gap-4 **:transition-colors **:duration-300">
     <!-- Card de filtrado -->
-    <section class="flex flex-col rounded-xl mx-2 p-6 w-full mt-2 mb-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm lg:max-w-sm shrink-0">
+    <section
+      class="flex flex-col items-center justify-between rounded-xl mx-2 p-6 w-full mt-2 mb-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm lg:max-w-sm shrink-0">
 
       <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-1">Comprobar disponibilidad</h2>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Aquí podrás comprobar la disponibilidad de los espacios para tus actividades.</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Aquí podrás comprobar la disponibilidad de los espacios
+        para tus actividades.</p>
       <p class="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Filtrar por</p>
 
       <!-- ID de aula -->
@@ -124,7 +126,7 @@ const handleSubmit = async () => {
 
       <!-- Botón -->
       <button @click="handleSubmit" :disabled="loading"
-        class="w-full max-w-xs mt-auto flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-all duration-150">
+        class="items-center w-full max-w-xs mt-auto flex justify-center gap-2 bg-red-500 hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-all duration-150">
         <svg v-if="loading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
@@ -135,7 +137,8 @@ const handleSubmit = async () => {
     </section>
 
     <!-- Card de resultados -->
-    <section class="mx-2 p-6 w-full mt-2 mb-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
+    <section
+      class="mx-2 p-6 w-full mt-2 mb-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
       <span class="text-base font-semibold text-gray-800 dark:text-gray-100">Resultados</span>
 
       <!-- Sin resultados -->
@@ -149,8 +152,10 @@ const handleSubmit = async () => {
           class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-950 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-red-700 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <svg class="w-4 h-4 text-red-700 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
             <div>
@@ -158,7 +163,8 @@ const handleSubmit = async () => {
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Capacidad: {{ aula.capacity }} personas</p>
             </div>
           </div>
-          <span class="shrink-0 text-xs font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
+          <span
+            class="shrink-0 text-xs font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
             Disponible
           </span>
         </div>
