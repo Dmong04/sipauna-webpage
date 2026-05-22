@@ -1,16 +1,16 @@
 import { defineStore } from 'pinia'
 
 interface User {
-  userId:   string
+  userId: string
   fullname: string
-  email:    string
-  roleId:   string   // UUID — era number en el schema anterior
+  email: string
+  roleId: string   // UUID — era number en el schema anterior
   roleName: string   // 'admin' | 'profesor' | 'estudiante' | 'invitado'
 }
 
 interface AuthState {
   token: string | null
-  user:  User | null
+  user: User | null
 }
 
 const postToSW = async (message: object): Promise<void> => {
@@ -27,7 +27,7 @@ const postToSW = async (message: object): Promise<void> => {
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     token: null,
-    user:  null,
+    user: null,
   }),
 
   getters: {
@@ -37,28 +37,36 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async setSession(token: string, user: User) {
       this.token = token
-      this.user  = user
+      this.user = user
+      localStorage.setItem('auth_token', token)
+      localStorage.setItem('auth_user', JSON.stringify(user))
       await postToSW({
-        type:    'SAVE_SESSION',
+        type: 'SAVE_SESSION',
         payload: { token, user },
       })
     },
 
-    async clearSession() {
-      this.token = null
-      this.user  = null
-      await postToSW({ type: 'CLEAR_SESSION' })
-      await postToSW({ type: 'CLEAR_GRAPHQL_CACHE' })
-    },
-
     restoreSession(token: string, user: User) {
       this.token = token
-      this.user  = user
+      this.user = user
+      localStorage.setItem('auth_token', token)
+      localStorage.setItem('auth_user', JSON.stringify(user))
     },
 
     clearLocalSession() {
       this.token = null
-      this.user  = null
+      this.user = null
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+    },
+
+    async clearSession() {
+      this.token = null
+      this.user = null
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+      await postToSW({ type: 'CLEAR_SESSION' })
+      await postToSW({ type: 'CLEAR_GRAPHQL_CACHE' })
     },
   },
 })
