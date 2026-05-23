@@ -7,16 +7,30 @@ const error = ref('')
 const viewResults = ref(false)
 
 const handleSubmit = async () => {
+   
   error.value = ''
   loading.value = true
 
   try {
-    const result = await GqlGetClassrooms()
-    console.log(result)
-    resultados.value = result.classrooms ?? []
-    viewResults.value = true
+   const result =await $fetch('/api/graphql',{
+    method:'POST',
+    body:{
+      query:`query getClassrooms{
+      classrooms{
+        classroomId
+        code
+        capacity
+        }
+      }`
+    }
+   })
+   resultados.value=result.data?.classrooms ?? []
+   viewResults.value=true
+   
   } catch (err) {
-    error.value = 'Error al obtener los datos'
+    console.error('Error completo', err);
+    error.value='Error al odtener los resultados'
+    
   } finally {
     loading.value = false
   }

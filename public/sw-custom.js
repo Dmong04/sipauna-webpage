@@ -7,11 +7,7 @@ const GRAPHQL_CACHE='graphql-v1'
 const STATIC_CACHE='static-v1'
 
 const static_assets=[
-    '/',
-    '/dashboard',
-    '/dashboard/availability',
-    '/dashboard/schedules',
-    '/dashboard/booking'
+    '/'
 ]
 
 self.addEventListener('install',(event)=>{
@@ -80,22 +76,33 @@ self.addEventListener('fetch',(event)=>{
 
 
     const url =new URL(event.request.url)
+  
     if(!url.protocol.startsWith('http'))return
 
     let resp
     if(event.request.method==='POST' && url.pathname==='/api/graphql'){
+        const reqClone=event.request.clone()
+
         resp=fetch(event.request).then(async networkResp=>{
             const data=await networkResp.clone().json()
 
             if(data?.data?.users){
                 const cache=await caches.open(GRAPHQL_CACHE)
-                await cache.put('users',networkResp.clone())
+                await cache.put('/graphql-users',networkResp.clone())
             }
+            
+            if(data?.data.classrooms){
+                const cache=await caches.open(GRAPHQL_CACHE)
+                await cache.put('/graphql-classrooms',networkResp.clone())
+            }
+
+
             return networkResp
         })
 
         .catch(async()=>{
-            const body=await event.request.clone().text()
+
+            const body=await reqClone.text()
             const bodyData=JSON.parse(body)
                 //Validar los datos aca!
                 if(bodyData.query.includes('mutation')){
@@ -106,9 +113,16 @@ self.addEventListener('fetch',(event)=>{
                 }
                 //Aun no funciona porque no se llegan los datos 
                 if(bodyData.query.includes('users')){
-                    const cached= await caches.match('users')
+                    const cached= await caches.match('/graphql-users')
                     return cached ?? new Response(
                         JSON.stringify({ ok: false, offline: true, message: 'Sin cache de users' }),
+                        { headers: { 'Content-Type': 'application/json' } })
+                }
+
+                  if(bodyData.query.includes('classrooms')){
+                    const cached= await caches.match('/graphql-classrooms')
+                    return cached ?? new Response(
+                        JSON.stringify({ ok: false, offline: true, message: 'Sin cache de classrooms' }),
                         { headers: { 'Content-Type': 'application/json' } })
                 }
                 
@@ -164,18 +178,19 @@ self.addEventListener('fetch',(event)=>{
         return
     }
 
-   event.respondWith(
+    event.respondWith(
     fetch(event.request).then(networkResp => {
-        const clone = networkResp.clone()
-        caches.open(STATIC_CACHE).then(cache => {
-            cache.put(event.request, clone)
-        })
+        if (event.request.method === 'GET') {  
+            const clone = networkResp.clone()
+            caches.open(STATIC_CACHE).then(cache => cache.put(event.request, clone))
+        }
         return networkResp
     }).catch(async () => {
         const cached = await caches.match(event.request)
         return cached ?? new Response('Offline', { status: 503 })
     })
 )
+   
 })
 
 
