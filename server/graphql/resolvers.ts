@@ -1,8 +1,34 @@
 import { supabase } from '../utils/supabase'
+import { GraphQLError } from 'graphql'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+
+const JWT_SECRET = process.env.JWT_SECRET ?? 'change-me-in-production'
 
 const VALID_STATUSES = ['PENDIENTE', 'APROBADO', 'RECHAZADO', 'CANCELADO']
 
-// ── Helper: resolve display name for one or many userIds ──────────────────────
+interface GqlContext { userId?: string; roleName?: string }
+
+const PROFILE_BY_ROLE: Record<string, { table: string; nameCol: string }> = {
+  admin:      { table: 'Admin',     nameCol: 'fullName' },
+  profesor:   { table: 'Professor', nameCol: 'fullName' },
+  estudiante: { table: 'Student',   nameCol: 'fullName' },
+  invitado:   { table: 'Guest',     nameCol: 'fullname' },
+}
+
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+
+function signToken(payload: { userId: string; roleName: string }) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
+}
+
+function requireAdmin(ctx: GqlContext) {
+  if (!ctx.userId) throw new GraphQLError('No autorizado', { extensions: { code: 'UNAUTHENTICATED' } })
+  if (ctx.roleName !== 'admin') throw new GraphQLError('Acceso denegado', { extensions: { code: 'FORBIDDEN' } })
+  return ctx as Required<GqlContext>
+}
+
+// ── Profile name helper ───────────────────────────────────────────────────────
 
 async function getProfileFullNames(userIds: string[]): Promise<Record<string, string>> {
   if (userIds.length === 0) return {}
@@ -98,6 +124,20 @@ export const resolvers = {
       }
     },
 
+    roles: async () => {
+      const { data, error } = await supabase
+        .from('Role').select('roleId, name').order('name')
+      if (error) throw new Error(error.message)
+      return (data as any[]).map(r => ({ roleId: r.roleId, name: r.name }))
+    },
+
+    professors: async () => {
+      const { data, error } = await supabase
+        .from('Professor').select('userId, fullName').order('fullName')
+      if (error) throw new Error(error.message)
+      return (data as any[]).map(r => ({ userId: r.userId, fullName: r.fullName }))
+    },
+
     classrooms: async () => {
       const { data, error } = await supabase
         .from('Classroom').select('*').order('code')
@@ -155,15 +195,18 @@ export const resolvers = {
     login: async (_: unknown, { email, password }: { email: string; password: string }) => {
       const { data, error } = await supabase
         .from('User')
-        .select('userId, email, roleId, Role(name)')
+        .select('userId, email, roleId, password, Role(name)')
         .eq('email', email)
-        .eq('password', password)
         .single()
 
-      if (error || !data) throw new Error('Credenciales incorrectas')
+      if (error || !data) throw new GraphQLError('Credenciales incorrectas')
 
-      const nameMap = await getProfileFullNames([(data as any).userId])
-      const token   = `token-${(data as any).userId}-${Date.now()}`
+      const valid = await bcrypt.compare(password, (data as any).password)
+      if (!valid) throw new GraphQLError('Credenciales incorrectas')
+
+      const roleName = (data as any).Role?.name ?? ''
+      const nameMap  = await getProfileFullNames([(data as any).userId])
+      const token    = signToken({ userId: (data as any).userId, roleName })
 
       return {
         token,
@@ -172,34 +215,32 @@ export const resolvers = {
           email:    (data as any).email,
           fullname: nameMap[(data as any).userId] ?? 'Usuario',
           roleId:   (data as any).roleId,
-          roleName: (data as any).Role?.name ?? '',
+          roleName,
         },
       }
     },
 
-<<<<<<< HEAD
-=======
     register: async (
       _: unknown,
-      { fullname, email, password }: { fullname: string; email: string; password: string }
+      { fullname, email, password, roleName: requestedRole }: { fullname: string; email: string; password: string; roleName?: string }
     ) => {
-      // Validación mínima
+      const ALLOWED = ['estudiante', 'profesor']
+      const roleName = ALLOWED.includes(requestedRole ?? '') ? requestedRole! : 'estudiante'
+
       if (!fullname?.trim() || !email?.trim() || !password)
         throw new GraphQLError('Todos los campos son obligatorios')
       if (password.length < 8)
         throw new GraphQLError('La contraseña debe tener al menos 8 caracteres')
 
-      // ¿Correo ya registrado?
       const { data: existing } = await supabase
         .from('User').select('userId').eq('email', email).maybeSingle()
       if (existing) throw new GraphQLError('El correo ya está registrado')
 
-      // Rol por defecto para auto-registro: estudiante
       const { data: role, error: roleErr } = await supabase
-        .from('Role').select('roleId').eq('name', 'estudiante').single()
+        .from('Role').select('roleId').eq('name', roleName).single()
       if (roleErr || !role) throw new GraphQLError('No se pudo asignar el rol')
 
-      const hash = await hashPassword(password)
+      const hash = await bcrypt.hash(password, 12)
 
       const { data: newUser, error: userErr } = await supabase
         .from('User')
@@ -208,14 +249,14 @@ export const resolvers = {
         .single()
       if (userErr || !newUser) throw new GraphQLError('No se pudo crear el usuario')
 
-      // Perfil de estudiante (legalId generado para el prototipo)
-      await supabase.from('Student').insert({
-        fullName: fullname.trim(),
-        legalId:  `EST-${Date.now()}`,
-        userId:   (newUser as any).userId,
+      const profile = PROFILE_BY_ROLE[roleName]
+      await supabase.from(profile.table).insert({
+        [profile.nameCol]: fullname.trim(),
+        legalId:           `REG-${Date.now()}`,
+        userId:            (newUser as any).userId,
       })
 
-      const token = signToken({ userId: (newUser as any).userId, roleName: 'estudiante' })
+      const token = signToken({ userId: (newUser as any).userId, roleName })
       return {
         token,
         user: {
@@ -223,12 +264,10 @@ export const resolvers = {
           email:    (newUser as any).email,
           fullname: fullname.trim(),
           roleId:   (newUser as any).roleId,
-          roleName: 'estudiante',
+          roleName,
         },
       }
     },
-
-    // ── Administración de usuarios (solo admin) ─────────────────────────────────
 
     createUser: async (
       _: unknown,
@@ -245,7 +284,6 @@ export const resolvers = {
       if (!password || password.length < 8)
         throw new GraphQLError('La contraseña debe tener al menos 8 caracteres')
 
-      // ¿Correo ya registrado?
       const { data: existing } = await supabase
         .from('User').select('userId').eq('email', email).maybeSingle()
       if (existing) throw new GraphQLError('El correo ya está registrado')
@@ -254,7 +292,7 @@ export const resolvers = {
         .from('Role').select('roleId').eq('name', roleName).single()
       if (roleErr || !role) throw new GraphQLError('Rol no encontrado')
 
-      const hash = await hashPassword(password)
+      const hash = await bcrypt.hash(password, 12)
 
       const { data: newUser, error: userErr } = await supabase
         .from('User')
@@ -263,13 +301,11 @@ export const resolvers = {
         .single()
       if (userErr || !newUser) throw new GraphQLError('No se pudo crear el usuario')
 
-      // Crear el perfil en la tabla correspondiente al rol
       const { error: profErr } = await supabase
         .from(profile.table)
         .insert({ [profile.nameCol]: fullname.trim(), legalId: legalId.trim(), userId: (newUser as any).userId })
 
       if (profErr) {
-        // Rollback manual del User si el perfil falla (p.ej. legalId duplicado)
         await supabase.from('User').delete().eq('userId', (newUser as any).userId)
         throw new GraphQLError('No se pudo crear el perfil (¿identificación duplicada?)')
       }
@@ -320,7 +356,6 @@ export const resolvers = {
       if (caller.userId === userId)
         throw new GraphQLError('No puede eliminar su propia cuenta')
 
-      // Orden por FKs: préstamos (RESTRICT) → perfiles → usuario
       await supabase.from('Loan').delete().eq('userId', userId)
       await Promise.all([
         supabase.from('Admin').delete().eq('userId', userId),
@@ -333,7 +368,6 @@ export const resolvers = {
       return true
     },
 
->>>>>>> parent of 6f7f2da (Updates)
     createClassroom: async (
       _: unknown,
       { code, capacity }: { code: string; capacity: number }
@@ -365,6 +399,53 @@ export const resolvers = {
       return true
     },
 
+    createSchedule: async (
+      _: unknown,
+      args: { classroomCode: string; subject: string; professorUserId: string; day: string; startTime: string; endTime: string }
+    ) => {
+      const { classroomCode, subject, professorUserId, day, startTime, endTime } = args
+
+      const { data: cls, error: clsErr } = await supabase
+        .from('Classroom').select('classroomId').eq('code', classroomCode).single()
+      if (clsErr || !cls) throw new Error('Aula no encontrada')
+
+      const { data: prof, error: profErr } = await supabase
+        .from('Professor').select('professorId').eq('userId', professorUserId).single()
+      if (profErr || !prof) throw new Error('Profesor no encontrado')
+
+      const { data: course, error: courseErr } = await supabase
+        .from('Course')
+        .insert({ name: subject, professorId: (prof as any).professorId })
+        .select('courseId')
+        .single()
+      if (courseErr || !course) throw new Error('No se pudo crear el curso')
+
+      const { data, error } = await supabase
+        .from('Schedule')
+        .insert({
+          classroomId: (cls as any).classroomId,
+          courseId:    (course as any).courseId,
+          day,
+          startTime,
+          endTime,
+        })
+        .select(`
+          scheduleId, day, startTime, endTime,
+          Classroom(code),
+          Course(name, Professor(fullName))
+        `)
+        .single()
+      if (error) throw new Error(error.message)
+      return mapSchedule(data as any)
+    },
+
+    deleteSchedule: async (_: unknown, { scheduleId }: { scheduleId: string }) => {
+      const { error } = await supabase
+        .from('Schedule').delete().eq('scheduleId', scheduleId)
+      if (error) throw new Error('Horario no encontrado')
+      return true
+    },
+
     createLoan: async (
       _: unknown,
       args: {
@@ -381,12 +462,10 @@ export const resolvers = {
       if (startTime >= endTime)
         throw new Error('La hora de inicio debe ser anterior a la hora de fin')
 
-      // Validar que el userId existe
       const { data: userCheck } = await supabase
         .from('User').select('userId').eq('userId', userId).maybeSingle()
       if (!userCheck) throw new Error('Sesión inválida. Por favor cerrá sesión e iniciá de nuevo.')
 
-      // Resolver code → classroomId
       const { data: cls, error: clsErr } = await supabase
         .from('Classroom').select('classroomId').eq('code', classroomCode).single()
       if (clsErr || !cls) throw new Error('Aula no encontrada')

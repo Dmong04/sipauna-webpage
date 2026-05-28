@@ -11,6 +11,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
       try {
         const user = JSON.parse(userRaw)
         auth.restoreSession(token, user)
+        useGqlToken(token)
       } catch { }
     }
   }
@@ -29,6 +30,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
           if (event.data?.type === 'SESSION_RESTORED') {
             const { token, user } = event.data.payload
             auth.restoreSession(token, user)
+            useGqlToken(token)
           } else {
             auth.clearLocalSession()
           }
@@ -36,12 +38,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
           navigator.serviceWorker.removeEventListener('message', handler)
           resolve()
         }
+      }
 
-        navigator.serviceWorker.addEventListener('message', handler)
+      navigator.serviceWorker.addEventListener('message', handler)
 
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.active?.postMessage({ type: 'GET_SESSION' })
-        })
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.active?.postMessage({ type: 'GET_SESSION' })
+      })
     })
   }
 
