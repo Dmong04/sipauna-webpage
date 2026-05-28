@@ -70,6 +70,15 @@ const updatingId = ref<string | null>(null)
 // Fecha mínima = hoy
 const today = new Date().toISOString().split('T')[0]
 
+// Pre-fill from query params (e.g. from availability page)
+onMounted(() => {
+  const q = useRoute().query
+  if (q.code)  form.classroomCode = String(q.code)
+  if (q.date)  form.date          = String(q.date)
+  if (q.start) form.startTime     = String(q.start)
+  if (q.end)   form.endTime       = String(q.end)
+})
+
 async function fetchData() {
   globalError.value  = ''
   loadingData.value  = true
