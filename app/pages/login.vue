@@ -5,7 +5,7 @@ const showPassword = ref(false)
 const auth = useAuthStore()
 
 const formData = reactive({ name: '', email: '', password: '', roleName: 'estudiante' })
-const error   = ref('')
+const error = ref('')
 const loading = ref(false)
 
 const handleSubmit = async () => {
@@ -19,7 +19,7 @@ const handleSubmit = async () => {
     } else {
       const { register } = await GqlRegister({
         fullname: formData.name,
-        email:    formData.email,
+        email: formData.email,
         password: formData.password,
         roleName: formData.roleName,
       })
@@ -134,22 +134,20 @@ definePageMeta({ middleware: 'auth' })
               Tipo de cuenta
             </label>
             <div class="grid grid-cols-2 gap-2">
-              <button type="button" @click="formData.roleName = 'estudiante'"
-                :class="[
-                  'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
-                  formData.roleName === 'estudiante'
-                    ? 'bg-red-600 border-red-600 text-white'
-                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
-                ]">
+              <button type="button" @click="formData.roleName = 'estudiante'" :class="[
+                'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
+                formData.roleName === 'estudiante'
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
+              ]">
                 Estudiante
               </button>
-              <button type="button" @click="formData.roleName = 'profesor'"
-                :class="[
-                  'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
-                  formData.roleName === 'profesor'
-                    ? 'bg-red-600 border-red-600 text-white'
-                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
-                ]">
+              <button type="button" @click="formData.roleName = 'profesor'" :class="[
+                'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
+                formData.roleName === 'profesor'
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
+              ]">
                 Profesor
               </button>
             </div>

@@ -72,6 +72,18 @@ onMounted(fetchSchedules)
         </p>
       </div>
 
+      <div class="flex flex-col sm:flex-row gap-2">
+        <button
+        v-if="isAdmin"
+          @click="buildSchedules"
+        class="self-start sm:self-auto flex items-center gap-2 bg-red-500 hover:bg-red-600 active:scale-95 text-white text-sm font-medium py-2 px-4 rounded-md transition-all duration-150">
+        <svg v-if="loading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+        {{ loading ? 'Cargando...' : 'Cargar horarios' }}
+      </button>
+
       <button
         @click="fetchSchedules"
         :disabled="loading"
@@ -83,6 +95,7 @@ onMounted(fetchSchedules)
         </svg>
         {{ loading ? 'Cargando...' : 'Actualizar' }}
       </button>
+      </div>
     </div>
 
     <!-- Error -->

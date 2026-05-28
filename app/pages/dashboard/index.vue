@@ -13,7 +13,7 @@
                class="h-16 w-auto mx-auto mb-5 brightness-0 invert drop-shadow-lg" />
             <h1 class="font-bold text-4xl sm:text-5xl tracking-tight">SIPAUNA</h1>
             <p class="text-red-200 mt-3 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
-               Sistema Institucional para el Préstamo de Aulas — Sede Chorotega, Universidad Nacional
+               Sistema Institucional para el Préstamo de Aulas — Sede Regional Chorotega, Universidad Nacional de Costa Rica.
             </p>
          </div>
       </section>
