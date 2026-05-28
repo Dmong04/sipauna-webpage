@@ -2,49 +2,34 @@
 const state = ref('login')
 const colorMode = useColorMode()
 const showPassword = ref(false)
+const auth = useAuthStore()
 
-const formData = reactive({ name: '', email: '', password: '' })
-<<<<<<< HEAD
-const error = ref('')
+const formData = reactive({ name: '', email: '', password: '', roleName: 'estudiante' })
+const error   = ref('')
 const loading = ref(false)
-=======
-const error    = ref('')
-const loading  = ref(false)
->>>>>>> parent of 6f7f2da (Updates)
 
 const handleSubmit = async () => {
   error.value = ''
   loading.value = true
   try {
-    const { token, user } = await $fetch('/api/auth/login', {
-      method: 'POST',
-      body: { email: formData.email, password: formData.password }
-    })
-
-    const auth = useAuthStore()
-    await auth.setSession(token, user)
-    await navigateTo('/dashboard', { replace: true })
-
-<<<<<<< HEAD
-=======
     if (state.value === 'login') {
       const { login } = await GqlLogin({ email: formData.email, password: formData.password })
-      useGqlToken(login.token)               // envía Authorization: Bearer <jwt>
+      useGqlToken(login.token)
       await auth.setSession(login.token, login.user)
     } else {
       const { register } = await GqlRegister({
         fullname: formData.name,
         email:    formData.email,
         password: formData.password,
+        roleName: formData.roleName,
       })
       useGqlToken(register.token)
       await auth.setSession(register.token, register.user)
     }
-
     navigateTo('/dashboard', { replace: true })
->>>>>>> parent of 6f7f2da (Updates)
   } catch (e: any) {
-    error.value = 'Credenciales incorrectas. Intente de nuevo.'
+    const gqlMsg = e?.gqlErrors?.[0]?.message
+    error.value = gqlMsg ?? 'Error al iniciar sesión. Intente de nuevo.'
   } finally {
     loading.value = false
   }
@@ -53,6 +38,7 @@ const handleSubmit = async () => {
 const toggleState = () => {
   state.value = state.value === 'login' ? 'register' : 'login'
   error.value = ''
+  formData.roleName = 'estudiante'
 }
 
 const toggleTheme = () => {
@@ -139,12 +125,34 @@ definePageMeta({ middleware: 'auth' })
                      placeholder-gray-400 dark:placeholder-gray-500
                      text-sm px-4 py-2.5
                      focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent
-<<<<<<< HEAD
                      transition-colors duration-200" />
-=======
-                     transition-colors duration-200"
-            />
->>>>>>> parent of 6f7f2da (Updates)
+          </div>
+
+          <!-- Rol (solo registro) -->
+          <div v-if="state !== 'login'">
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Tipo de cuenta
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" @click="formData.roleName = 'estudiante'"
+                :class="[
+                  'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
+                  formData.roleName === 'estudiante'
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
+                ]">
+                Estudiante
+              </button>
+              <button type="button" @click="formData.roleName = 'profesor'"
+                :class="[
+                  'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
+                  formData.roleName === 'profesor'
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
+                ]">
+                Profesor
+              </button>
+            </div>
           </div>
 
           <!-- Correo -->

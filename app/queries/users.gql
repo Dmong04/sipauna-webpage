@@ -10,11 +10,9 @@ mutation Login($email: String!, $password: String!) {
     }
   }
 }
-<<<<<<< HEAD
-=======
 
-mutation Register($fullname: String!, $email: String!, $password: String!) {
-  register(fullname: $fullname, email: $email, password: $password) {
+mutation Register($fullname: String!, $email: String!, $password: String!, $roleName: String) {
+  register(fullname: $fullname, email: $email, password: $password, roleName: $roleName) {
     token
     user {
       userId
@@ -74,4 +72,3 @@ mutation updateUserRole($userId: ID!, $roleName: String!) {
 mutation deleteUser($userId: ID!) {
   deleteUser(userId: $userId)
 }
->>>>>>> parent of 6f7f2da (Updates)
