@@ -11,8 +11,8 @@ mutation Login($email: String!, $password: String!) {
   }
 }
 
-mutation Register($fullname: String!, $email: String!, $password: String!) {
-  register(fullname: $fullname, email: $email, password: $password) {
+mutation Register($fullname: String!, $email: String!, $password: String!, $roleName: String) {
+  register(fullname: $fullname, email: $email, password: $password, roleName: $roleName) {
     token
     user {
       userId

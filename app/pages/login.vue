@@ -5,7 +5,7 @@ const state       = ref('login')
 const colorMode   = useColorMode()
 const showPassword = ref(false)
 
-const formData = reactive({ name: '', email: '', password: '' })
+const formData = reactive({ name: '', email: '', password: '', roleName: 'estudiante' })
 const error    = ref('')
 const loading  = ref(false)
 
@@ -24,6 +24,7 @@ const handleSubmit = async () => {
         fullname: formData.name,
         email:    formData.email,
         password: formData.password,
+        roleName: formData.roleName,
       })
       useGqlToken(register.token)
       await auth.setSession(register.token, register.user)
@@ -42,6 +43,7 @@ const handleSubmit = async () => {
 const toggleState = () => {
   state.value = state.value === 'login' ? 'register' : 'login'
   error.value = ''
+  formData.roleName = 'estudiante'
 }
 
 const toggleTheme = () => {
@@ -143,6 +145,39 @@ definePageMeta({ middleware: 'auth' })
             />
           </div>
 
+          <!-- Tipo de cuenta (solo registro) -->
+          <div v-if="state !== 'login'">
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Tipo de cuenta
+            </label>
+            <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+              <button
+                type="button"
+                @click="formData.roleName = 'estudiante'"
+                :class="[
+                  'flex-1 py-2.5 text-sm font-medium transition-colors duration-150',
+                  formData.roleName === 'estudiante'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-white dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/60'
+                ]"
+              >
+                Estudiante
+              </button>
+              <button
+                type="button"
+                @click="formData.roleName = 'profesor'"
+                :class="[
+                  'flex-1 py-2.5 text-sm font-medium transition-colors duration-150 border-l border-gray-300 dark:border-gray-600',
+                  formData.roleName === 'profesor'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-white dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/60'
+                ]"
+              >
+                Profesor
+              </button>
+            </div>
+          </div>
+
           <!-- Correo -->
           <div>
             <label for="login-email" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -233,7 +268,7 @@ definePageMeta({ middleware: 'auth' })
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
-            {{ loading ? 'Iniciando sesión...' : state === 'login' ? 'Iniciar sesión' : 'Crear cuenta' }}
+            {{ loading ? (state === 'login' ? 'Iniciando sesión...' : 'Creando cuenta...') : state === 'login' ? 'Iniciar sesión' : 'Crear cuenta' }}
           </button>
 
         </form>

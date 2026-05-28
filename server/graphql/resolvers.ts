@@ -224,22 +224,24 @@ export const resolvers = {
 
     register: async (
       _: unknown,
-      { fullname, email, password }: { fullname: string; email: string; password: string }
+      { fullname, email, password, roleName: requestedRole }:
+        { fullname: string; email: string; password: string; roleName?: string }
     ) => {
-      // Validación mínima
       if (!fullname?.trim() || !email?.trim() || !password)
         throw new GraphQLError('Todos los campos son obligatorios')
       if (password.length < 8)
         throw new GraphQLError('La contraseña debe tener al menos 8 caracteres')
 
-      // ¿Correo ya registrado?
+      // Solo profesor y estudiante pueden auto-registrarse
+      const roleName = requestedRole === 'profesor' ? 'profesor' : 'estudiante'
+      const profile  = PROFILE_BY_ROLE[roleName]
+
       const { data: existing } = await supabase
         .from('User').select('userId').eq('email', email).maybeSingle()
       if (existing) throw new GraphQLError('El correo ya está registrado')
 
-      // Rol por defecto para auto-registro: estudiante
       const { data: role, error: roleErr } = await supabase
-        .from('Role').select('roleId').eq('name', 'estudiante').single()
+        .from('Role').select('roleId').eq('name', roleName).single()
       if (roleErr || !role) throw new GraphQLError('No se pudo asignar el rol')
 
       const hash = await hashPassword(password)
@@ -251,14 +253,14 @@ export const resolvers = {
         .single()
       if (userErr || !newUser) throw new GraphQLError('No se pudo crear el usuario')
 
-      // Perfil de estudiante (legalId generado para el prototipo)
-      await supabase.from('Student').insert({
-        fullName: fullname.trim(),
-        legalId:  `EST-${Date.now()}`,
-        userId:   (newUser as any).userId,
+      const prefix = roleName === 'profesor' ? 'PROF' : 'EST'
+      await supabase.from(profile.table).insert({
+        [profile.nameCol]: fullname.trim(),
+        legalId:           `${prefix}-${Date.now()}`,
+        userId:            (newUser as any).userId,
       })
 
-      const token = signToken({ userId: (newUser as any).userId, roleName: 'estudiante' })
+      const token = signToken({ userId: (newUser as any).userId, roleName })
       return {
         token,
         user: {
@@ -266,7 +268,7 @@ export const resolvers = {
           email:    (newUser as any).email,
           fullname: fullname.trim(),
           roleId:   (newUser as any).roleId,
-          roleName: 'estudiante',
+          roleName,
         },
       }
     },

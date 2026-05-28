@@ -63,7 +63,7 @@ type Query {
 
 type Mutation {
   login(email: String!, password: String!): AuthPayload
-  register(fullname: String!, email: String!, password: String!): AuthPayload
+  register(fullname: String!, email: String!, password: String!, roleName: String): AuthPayload
 
   createUser(fullname: String!, email: String!, password: String!, roleName: String!, legalId: String!): User
   updateUserRole(userId: ID!, roleName: String!): User
