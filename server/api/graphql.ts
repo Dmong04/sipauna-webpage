@@ -1,7 +1,7 @@
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { createYoga } from "graphql-yoga";
 import jwt from 'jsonwebtoken'
-import { resolvers } from "../graphql/resolvers";
+import { resolvers } from "../graphql/resolvers.index";
 import { typeDefs } from "../graphql/schema"
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'change-me-in-production'
