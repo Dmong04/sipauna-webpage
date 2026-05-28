@@ -193,7 +193,7 @@ const counts = computed(() => ({
       </p>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-4 items-start mx-2">
+    <div class="flex flex-col lg:flex-row gap-4 lg:items-start mx-2">
 
       <!-- ── Filter panel ──────────────────────────────────────────────────── -->
       <aside class="w-full lg:w-64 shrink-0 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm p-5">
@@ -296,15 +296,24 @@ const counts = computed(() => ({
         </div>
 
         <!-- Loading skeleton -->
-        <div v-else-if="loading" class="flex flex-col gap-3">
-          <div v-for="i in 5" :key="i" class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 animate-pulse">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-              <div class="flex-1">
-                <div class="h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-20 mb-2"></div>
-                <div class="h-3 bg-gray-100 dark:bg-gray-800 rounded w-14"></div>
+        <div v-else-if="loading" class="flex flex-col gap-3 w-full">
+          <div v-for="i in 4" :key="i" class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden animate-pulse">
+            <!-- Status bar placeholder -->
+            <div class="h-0.5 w-full bg-gray-200 dark:bg-gray-700"></div>
+            <div class="px-4 py-3.5 flex items-start gap-3">
+              <!-- Icon -->
+              <div class="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 shrink-0"></div>
+              <!-- Info lines -->
+              <div class="flex-1 min-w-0 pt-0.5">
+                <div class="flex items-center gap-2 mb-2.5">
+                  <div class="h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                  <div class="h-3 bg-gray-100 dark:bg-gray-800 rounded w-16"></div>
+                  <div class="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-20 ml-1"></div>
+                </div>
+                <div class="h-3 bg-gray-100 dark:bg-gray-800 rounded w-48"></div>
               </div>
-              <div class="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+              <!-- Button placeholder (desktop) -->
+              <div class="hidden sm:block h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded-lg shrink-0"></div>
             </div>
           </div>
         </div>
@@ -313,14 +322,14 @@ const counts = computed(() => ({
         <template v-else-if="searched">
 
           <!-- Toolbar -->
-          <div class="flex items-center justify-between mb-3">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <p class="text-sm text-gray-500 dark:text-gray-400 min-w-0">
               <span class="font-medium text-gray-700 dark:text-gray-300 capitalize">{{ formattedDate }}</span>
               <span class="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
-              <span>{{ fmtTime(filterStart) }} – {{ fmtTime(filterEnd) }}</span>
+              <span class="whitespace-nowrap">{{ fmtTime(filterStart) }} – {{ fmtTime(filterEnd) }}</span>
             </p>
             <!-- View toggle -->
-            <div class="flex items-center rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-900 text-xs font-medium">
+            <div class="flex shrink-0 items-center rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-900 text-xs font-medium">
               <button @click="viewMode = 'list'" :class="['px-3 py-1.5 transition-colors', viewMode === 'list' ? 'bg-red-600 text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400']">
                 Lista
               </button>
@@ -398,11 +407,20 @@ const counts = computed(() => ({
                         fuera del horario solicitado
                       </p>
                     </div>
+
+                    <!-- Booking CTA (mobile – full width below info) -->
+                    <NuxtLink v-if="room.status === 'free'" :to="bookingLink(room.code)"
+                      class="sm:hidden mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white transition-colors active:scale-[.97]">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Reservar
+                    </NuxtLink>
                   </div>
 
-                  <!-- Booking CTA -->
+                  <!-- Booking CTA (desktop – inline) -->
                   <NuxtLink v-if="room.status === 'free'" :to="bookingLink(room.code)"
-                    class="shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white transition-colors active:scale-[.97]">
+                    class="hidden sm:flex shrink-0 self-start items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white transition-colors active:scale-[.97]">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
@@ -414,72 +432,84 @@ const counts = computed(() => ({
           </div>
 
           <!-- ── TIMELINE VIEW ──────────────────────────────────────────────── -->
-          <div v-else class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+          <div v-else class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div class="min-w-[560px] bg-white dark:bg-gray-900 overflow-hidden">
 
-            <!-- Hour header -->
-            <div class="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
-              <div class="w-28 shrink-0 px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-r border-gray-200 dark:border-gray-700">
-                Aula
-              </div>
-              <div class="flex-1 relative" style="height: 32px;">
-                <div v-for="h in HOURS" :key="h"
-                  class="absolute top-0 flex flex-col items-center"
-                  :style="{ left: `${(h * 60 - TIMELINE_START) / TIMELINE_SPAN * 100}%` }">
-                  <span class="text-xs text-gray-400 dark:text-gray-500 -translate-x-1/2 pt-2">{{ h }}:00</span>
+              <!-- Hour header -->
+              <div class="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
+                <div class="w-24 shrink-0 px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-r border-gray-200 dark:border-gray-700">
+                  Aula
                 </div>
-              </div>
-            </div>
-
-            <!-- Rows -->
-            <div v-for="(room, ri) in results" :key="room.classroomId"
-              class="flex hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-              :class="{ 'border-t border-gray-100 dark:border-gray-800': ri > 0 }">
-
-              <!-- Classroom label -->
-              <div class="w-28 shrink-0 px-3 py-3 border-r border-gray-100 dark:border-gray-800 flex flex-col justify-center">
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="STATUS[room.status].dot"></span>
-                  <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">{{ room.code }}</span>
+                <div class="flex-1 relative" style="height: 32px;">
+                  <div v-for="h in HOURS" :key="h"
+                    class="absolute top-0 flex flex-col items-center"
+                    :style="{ left: `${(h * 60 - TIMELINE_START) / TIMELINE_SPAN * 100}%` }">
+                    <span class="text-xs text-gray-400 dark:text-gray-500 -translate-x-1/2 pt-2">{{ h }}:00</span>
+                  </div>
                 </div>
-                <span class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{{ room.capacity }} pers.</span>
+                <!-- Action column header (sticky) -->
+                <div class="w-24 shrink-0 sticky right-0 border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60"></div>
               </div>
 
-              <!-- Timeline track -->
-              <div class="flex-1 relative" style="height: 48px;">
+              <!-- Rows -->
+              <div v-for="(room, ri) in results" :key="room.classroomId"
+                class="group flex hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+                :class="{ 'border-t border-gray-100 dark:border-gray-800': ri > 0 }">
 
-                <!-- Vertical hour guides -->
-                <div v-for="h in HOURS" :key="h"
-                  class="absolute top-0 bottom-0 w-px bg-gray-100 dark:bg-gray-800"
-                  :style="{ left: `${(h * 60 - TIMELINE_START) / TIMELINE_SPAN * 100}%` }">
+                <!-- Classroom label -->
+                <div class="w-24 shrink-0 px-3 py-3 border-r border-gray-100 dark:border-gray-800 flex flex-col justify-center">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="STATUS[room.status].dot"></span>
+                    <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">{{ room.code }}</span>
+                  </div>
+                  <span class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{{ room.capacity }} pers.</span>
                 </div>
 
-                <!-- Requested time highlight -->
-                <div v-if="filterStart && filterEnd"
-                  class="absolute top-1 bottom-1 rounded bg-green-100 dark:bg-green-950/40 border border-green-300 dark:border-green-800 opacity-60"
-                  :style="{ left: `${pct(filterStart)}%`, width: `${pctWidth(filterStart, filterEnd)}%` }">
+                <!-- Timeline track -->
+                <div class="flex-1 relative" style="height: 48px;">
+
+                  <!-- Vertical hour guides -->
+                  <div v-for="h in HOURS" :key="h"
+                    class="absolute top-0 bottom-0 w-px bg-gray-100 dark:bg-gray-800"
+                    :style="{ left: `${(h * 60 - TIMELINE_START) / TIMELINE_SPAN * 100}%` }">
+                  </div>
+
+                  <!-- Requested time highlight -->
+                  <div v-if="filterStart && filterEnd"
+                    class="absolute top-1 bottom-1 rounded bg-green-100 dark:bg-green-950/40 border border-green-300 dark:border-green-800 opacity-60"
+                    :style="{ left: `${pct(filterStart)}%`, width: `${pctWidth(filterStart, filterEnd)}%` }">
+                  </div>
+
+                  <!-- Busy blocks -->
+                  <div v-for="(slot, si) in room.busySlots" :key="si"
+                    class="absolute top-2 bottom-2 rounded flex items-center overflow-hidden"
+                    :class="SLOT_COLOR[slot.type]"
+                    :style="{ left: `${pct(slot.start)}%`, width: `${pctWidth(slot.start, slot.end)}%` }"
+                    :title="`${slot.start}–${slot.end} · ${slot.label}`">
+                    <span class="text-white text-[10px] font-medium px-1.5 truncate leading-none select-none">
+                      {{ slot.label }}
+                    </span>
+                  </div>
+
                 </div>
 
-                <!-- Busy blocks -->
-                <div v-for="(slot, si) in room.busySlots" :key="si"
-                  class="absolute top-2 bottom-2 rounded flex items-center overflow-hidden"
-                  :class="SLOT_COLOR[slot.type]"
-                  :style="{ left: `${pct(slot.start)}%`, width: `${pctWidth(slot.start, slot.end)}%` }"
-                  :title="`${slot.start}–${slot.end} · ${slot.label}`">
-                  <span class="text-white text-[10px] font-medium px-1.5 truncate leading-none select-none">
-                    {{ slot.label }}
+                <!-- Action column (sticky) -->
+                <div class="w-24 shrink-0 sticky right-0 border-l border-gray-100 dark:border-gray-800 flex items-center justify-center px-2 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-white/[0.02] transition-colors duration-100">
+                  <NuxtLink v-if="room.status === 'free'" :to="bookingLink(room.code)"
+                    class="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white transition-colors active:scale-[.97] whitespace-nowrap">
+                    <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Reservar
+                  </NuxtLink>
+                  <span v-else class="text-[10px] text-center text-gray-400 dark:text-gray-500 leading-tight px-1">
+                    {{ room.status === 'partial' ? 'Pendiente' : 'Ocupado' }}
                   </span>
                 </div>
 
-                <!-- Booking button on free rows -->
-                <NuxtLink v-if="room.status === 'free'" :to="bookingLink(room.code)"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white z-10 transition-colors opacity-0 group-hover:opacity-100"
-                  style="opacity: 1">
-                  + Reservar
-                </NuxtLink>
-
               </div>
-            </div>
 
+            </div>
           </div>
 
         </template>
