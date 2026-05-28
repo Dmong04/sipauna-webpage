@@ -9,11 +9,6 @@ export const typeDefs = `
     roleName: String!
   }
 
-  type Role {
-    roleId: ID!
-    name:   String!
-  }
-
   type AuthPayload {
     token: String!
     user:  User!
@@ -52,7 +47,6 @@ export const typeDefs = `
   type Query {
     users:                       [User!]!
     user(userId: ID!):           User
-    roles:                       [Role!]!
     classrooms:                  [Classroom!]!
     classroom(classroomId: ID!): Classroom
     schedules:                   [Schedule!]!
@@ -64,11 +58,14 @@ export const typeDefs = `
 
   type Mutation {
     login(email: String!, password: String!): AuthPayload
-    register(fullname: String!, email: String!, password: String!, roleName: String): AuthPayload
+<<<<<<< HEAD
+=======
+    register(fullname: String!, email: String!, password: String!): AuthPayload
 
     createUser(fullname: String!, email: String!, password: String!, roleName: String!, legalId: String!): User
     updateUserRole(userId: ID!, roleName: String!): User
     deleteUser(userId: ID!): Boolean
+>>>>>>> parent of 6f7f2da (Updates)
 
     createClassroom(code: String!, capacity: Int!): Classroom
     updateClassroom(classroomId: ID!, code: String, capacity: Int): Classroom
@@ -76,6 +73,7 @@ export const typeDefs = `
 
     createLoan(
       classroomCode: String!
+      userId:        ID!
       loanDate:      String!
       startTime:     String!
       endTime:       String!

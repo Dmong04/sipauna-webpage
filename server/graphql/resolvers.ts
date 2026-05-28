@@ -1,23 +1,6 @@
-import { GraphQLError } from 'graphql'
 import { supabase } from '../utils/supabase'
-import {
-  hashPassword,
-  verifyPassword,
-  signToken,
-  requireAuth,
-  requireAdmin,
-  type GqlContext,
-} from '../utils/auth'
 
 const VALID_STATUSES = ['PENDIENTE', 'APROBADO', 'RECHAZADO', 'CANCELADO']
-
-// Mapeo rol → tabla de perfil y columna del nombre
-const PROFILE_BY_ROLE: Record<string, { table: string; nameCol: string }> = {
-  admin:      { table: 'Admin',     nameCol: 'fullName' },
-  profesor:   { table: 'Professor', nameCol: 'fullName' },
-  estudiante: { table: 'Student',   nameCol: 'fullName' },
-  invitado:   { table: 'Guest',     nameCol: 'fullname' },
-}
 
 // ── Helper: resolve display name for one or many userIds ──────────────────────
 
@@ -79,13 +62,11 @@ function mapLoan(row: Record<string, any>, nameMap: Record<string, string>) {
 
 export const resolvers = {
   Query: {
-    users: async (_: unknown, __: unknown, ctx: GqlContext) => {
-      requireAdmin(ctx)
-
+    users: async () => {
       const { data, error } = await supabase
         .from('User')
         .select('userId, email, roleId, Role(name)')
-      if (error) throw new GraphQLError(error.message)
+      if (error) throw new Error(error.message)
 
       const userIds = (data as any[]).map(u => u.userId)
       const nameMap = await getProfileFullNames(userIds)
@@ -99,13 +80,7 @@ export const resolvers = {
       }))
     },
 
-    user: async (_: unknown, { userId }: { userId: string }, ctx: GqlContext) => {
-      const caller = requireAuth(ctx)
-      // Un usuario solo puede consultarse a sí mismo, salvo que sea admin
-      if (caller.roleName !== 'admin' && caller.userId !== userId) {
-        throw new GraphQLError('No autorizado', { extensions: { code: 'FORBIDDEN' } })
-      }
-
+    user: async (_: unknown, { userId }: { userId: string }) => {
       const { data, error } = await supabase
         .from('User')
         .select('userId, email, roleId, Role(name)')
@@ -123,32 +98,21 @@ export const resolvers = {
       }
     },
 
-    roles: async (_: unknown, __: unknown, ctx: GqlContext) => {
-      requireAdmin(ctx)
-      const { data, error } = await supabase
-        .from('Role').select('roleId, name').order('name')
-      if (error) throw new GraphQLError(error.message)
-      return data
-    },
-
-    classrooms: async (_: unknown, __: unknown, ctx: GqlContext) => {
-      requireAuth(ctx)
+    classrooms: async () => {
       const { data, error } = await supabase
         .from('Classroom').select('*').order('code')
-      if (error) throw new GraphQLError(error.message)
+      if (error) throw new Error(error.message)
       return (data as any[]).map(mapClassroom)
     },
 
-    classroom: async (_: unknown, { classroomId }: { classroomId: string }, ctx: GqlContext) => {
-      requireAuth(ctx)
+    classroom: async (_: unknown, { classroomId }: { classroomId: string }) => {
       const { data, error } = await supabase
         .from('Classroom').select('*').eq('classroomId', classroomId).single()
       if (error) return null
       return mapClassroom(data)
     },
 
-    schedules: async (_: unknown, __: unknown, ctx: GqlContext) => {
-      requireAuth(ctx)
+    schedules: async () => {
       const { data, error } = await supabase
         .from('Schedule')
         .select(`
@@ -158,36 +122,31 @@ export const resolvers = {
         `)
         .order('day')
         .order('startTime')
-      if (error) throw new GraphQLError(error.message)
+      if (error) throw new Error(error.message)
       return (data as any[]).map(mapSchedule)
     },
 
-    loans: async (_: unknown, __: unknown, ctx: GqlContext) => {
-      requireAdmin(ctx)
+    loans: async () => {
       const { data, error } = await supabase
         .from('Loan')
         .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
         .order('createdAt', { ascending: false })
-      if (error) throw new GraphQLError(error.message)
+      if (error) throw new Error(error.message)
 
       const userIds = [...new Set((data as any[]).map(l => l.userId))]
       const nameMap = await getProfileFullNames(userIds)
       return (data as any[]).map(l => mapLoan(l, nameMap))
     },
 
-    loansByUser: async (_: unknown, { userId }: { userId: string }, ctx: GqlContext) => {
-      const caller = requireAuth(ctx)
-      // Un usuario no-admin solo puede ver sus propios préstamos
-      const targetId = caller.roleName === 'admin' ? userId : caller.userId
-
+    loansByUser: async (_: unknown, { userId }: { userId: string }) => {
       const { data, error } = await supabase
         .from('Loan')
         .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
-        .eq('userId', targetId)
+        .eq('userId', userId)
         .order('createdAt', { ascending: false })
-      if (error) throw new GraphQLError(error.message)
+      if (error) throw new Error(error.message)
 
-      const nameMap = await getProfileFullNames([targetId])
+      const nameMap = await getProfileFullNames([userId])
       return (data as any[]).map(l => mapLoan(l, nameMap))
     },
   },
@@ -196,19 +155,15 @@ export const resolvers = {
     login: async (_: unknown, { email, password }: { email: string; password: string }) => {
       const { data, error } = await supabase
         .from('User')
-        .select('userId, email, password, roleId, Role(name)')
+        .select('userId, email, roleId, Role(name)')
         .eq('email', email)
+        .eq('password', password)
         .single()
 
-      // Mensaje genérico: no revela si el correo existe (anti enumeración)
-      if (error || !data) throw new GraphQLError('Credenciales incorrectas')
+      if (error || !data) throw new Error('Credenciales incorrectas')
 
-      const ok = await verifyPassword(password, (data as any).password)
-      if (!ok) throw new GraphQLError('Credenciales incorrectas')
-
-      const roleName = (data as any).Role?.name ?? ''
-      const nameMap  = await getProfileFullNames([(data as any).userId])
-      const token    = signToken({ userId: (data as any).userId, roleName })
+      const nameMap = await getProfileFullNames([(data as any).userId])
+      const token   = `token-${(data as any).userId}-${Date.now()}`
 
       return {
         token,
@@ -217,31 +172,31 @@ export const resolvers = {
           email:    (data as any).email,
           fullname: nameMap[(data as any).userId] ?? 'Usuario',
           roleId:   (data as any).roleId,
-          roleName,
+          roleName: (data as any).Role?.name ?? '',
         },
       }
     },
 
+<<<<<<< HEAD
+=======
     register: async (
       _: unknown,
-      { fullname, email, password, roleName: requestedRole }:
-        { fullname: string; email: string; password: string; roleName?: string }
+      { fullname, email, password }: { fullname: string; email: string; password: string }
     ) => {
+      // Validación mínima
       if (!fullname?.trim() || !email?.trim() || !password)
         throw new GraphQLError('Todos los campos son obligatorios')
       if (password.length < 8)
         throw new GraphQLError('La contraseña debe tener al menos 8 caracteres')
 
-      // Solo profesor y estudiante pueden auto-registrarse
-      const roleName = requestedRole === 'profesor' ? 'profesor' : 'estudiante'
-      const profile  = PROFILE_BY_ROLE[roleName]
-
+      // ¿Correo ya registrado?
       const { data: existing } = await supabase
         .from('User').select('userId').eq('email', email).maybeSingle()
       if (existing) throw new GraphQLError('El correo ya está registrado')
 
+      // Rol por defecto para auto-registro: estudiante
       const { data: role, error: roleErr } = await supabase
-        .from('Role').select('roleId').eq('name', roleName).single()
+        .from('Role').select('roleId').eq('name', 'estudiante').single()
       if (roleErr || !role) throw new GraphQLError('No se pudo asignar el rol')
 
       const hash = await hashPassword(password)
@@ -253,14 +208,14 @@ export const resolvers = {
         .single()
       if (userErr || !newUser) throw new GraphQLError('No se pudo crear el usuario')
 
-      const prefix = roleName === 'profesor' ? 'PROF' : 'EST'
-      await supabase.from(profile.table).insert({
-        [profile.nameCol]: fullname.trim(),
-        legalId:           `${prefix}-${Date.now()}`,
-        userId:            (newUser as any).userId,
+      // Perfil de estudiante (legalId generado para el prototipo)
+      await supabase.from('Student').insert({
+        fullName: fullname.trim(),
+        legalId:  `EST-${Date.now()}`,
+        userId:   (newUser as any).userId,
       })
 
-      const token = signToken({ userId: (newUser as any).userId, roleName })
+      const token = signToken({ userId: (newUser as any).userId, roleName: 'estudiante' })
       return {
         token,
         user: {
@@ -268,7 +223,7 @@ export const resolvers = {
           email:    (newUser as any).email,
           fullname: fullname.trim(),
           roleId:   (newUser as any).roleId,
-          roleName,
+          roleName: 'estudiante',
         },
       }
     },
@@ -378,39 +333,35 @@ export const resolvers = {
       return true
     },
 
+>>>>>>> parent of 6f7f2da (Updates)
     createClassroom: async (
       _: unknown,
-      { code, capacity }: { code: string; capacity: number },
-      ctx: GqlContext
+      { code, capacity }: { code: string; capacity: number }
     ) => {
-      requireAdmin(ctx)
       const { data, error } = await supabase
         .from('Classroom').insert({ code, capacity }).select().single()
-      if (error) throw new GraphQLError(error.message)
+      if (error) throw new Error(error.message)
       return mapClassroom(data)
     },
 
     updateClassroom: async (
       _: unknown,
-      { classroomId, code, capacity }: { classroomId: string; code?: string; capacity?: number },
-      ctx: GqlContext
+      { classroomId, code, capacity }: { classroomId: string; code?: string; capacity?: number }
     ) => {
-      requireAdmin(ctx)
       const updates: Record<string, any> = {}
       if (code     !== undefined) updates.code     = code
       if (capacity !== undefined) updates.capacity = capacity
 
       const { data, error } = await supabase
         .from('Classroom').update(updates).eq('classroomId', classroomId).select().single()
-      if (error) throw new GraphQLError('Aula no encontrada')
+      if (error) throw new Error('Aula no encontrada')
       return mapClassroom(data)
     },
 
-    deleteClassroom: async (_: unknown, { classroomId }: { classroomId: string }, ctx: GqlContext) => {
-      requireAdmin(ctx)
+    deleteClassroom: async (_: unknown, { classroomId }: { classroomId: string }) => {
       const { error } = await supabase
         .from('Classroom').delete().eq('classroomId', classroomId)
-      if (error) throw new GraphQLError('Aula no encontrada')
+      if (error) throw new Error('Aula no encontrada')
       return true
     },
 
@@ -418,30 +369,33 @@ export const resolvers = {
       _: unknown,
       args: {
         classroomCode: string
+        userId:        string
         loanDate:      string
         startTime:     string
         endTime:       string
         reason:        string
-      },
-      ctx: GqlContext
+      }
     ) => {
-      // El userId se deriva del token, NUNCA del cliente (evita suplantación)
-      const caller = requireAuth(ctx)
-      const { classroomCode, loanDate, startTime, endTime, reason } = args
+      const { classroomCode, userId, loanDate, startTime, endTime, reason } = args
 
       if (startTime >= endTime)
-        throw new GraphQLError('La hora de inicio debe ser anterior a la hora de fin')
+        throw new Error('La hora de inicio debe ser anterior a la hora de fin')
+
+      // Validar que el userId existe
+      const { data: userCheck } = await supabase
+        .from('User').select('userId').eq('userId', userId).maybeSingle()
+      if (!userCheck) throw new Error('Sesión inválida. Por favor cerrá sesión e iniciá de nuevo.')
 
       // Resolver code → classroomId
       const { data: cls, error: clsErr } = await supabase
         .from('Classroom').select('classroomId').eq('code', classroomCode).single()
-      if (clsErr || !cls) throw new GraphQLError('Aula no encontrada')
+      if (clsErr || !cls) throw new Error('Aula no encontrada')
 
       const { data, error } = await supabase
         .from('Loan')
         .insert({
           classroomId: (cls as any).classroomId,
-          userId:      caller.userId,
+          userId,
           loanDate:    `${loanDate}T00:00:00`,
           startTime,
           endTime,
@@ -451,20 +405,18 @@ export const resolvers = {
         .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
         .single()
 
-      if (error) throw new GraphQLError(error.message)
+      if (error) throw new Error(error.message)
 
-      const nameMap = await getProfileFullNames([caller.userId])
+      const nameMap = await getProfileFullNames([userId])
       return mapLoan(data as any, nameMap)
     },
 
     updateLoanStatus: async (
       _: unknown,
-      { loanId, status }: { loanId: string; status: string },
-      ctx: GqlContext
+      { loanId, status }: { loanId: string; status: string }
     ) => {
-      requireAdmin(ctx)
       if (!VALID_STATUSES.includes(status))
-        throw new GraphQLError('Estado inválido')
+        throw new Error('Estado inválido')
 
       const { data, error } = await supabase
         .from('Loan')
@@ -473,7 +425,7 @@ export const resolvers = {
         .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
         .single()
 
-      if (error) throw new GraphQLError('Préstamo no encontrado')
+      if (error) throw new Error('Préstamo no encontrado')
 
       const nameMap = await getProfileFullNames([(data as any).userId])
       return mapLoan(data as any, nameMap)

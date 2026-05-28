@@ -17,26 +17,24 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (!auth.isAuthenticated) {
     await new Promise<void>((resolve) => {
-        if (!('serviceWorker' in navigator)) return resolve()
+      if (!('serviceWorker' in navigator)) return resolve()
 
-        const timeout = setTimeout(resolve, 800)
+      const timeout = setTimeout(resolve, 800)
 
-        const handler = (event: MessageEvent) => {
-            if (
-                event.data?.type === 'SESSION_RESTORED' ||
-                event.data?.type === 'SESSION_NOT_FOUND'
-            ) {
-                if (event.data?.type === 'SESSION_RESTORED') {
-                    const { token, user } = event.data.payload
-                    auth.restoreSession(token, user)
-                    useGqlToken(token)
-                } else {
-                    auth.clearLocalSession()
-                }
-                clearTimeout(timeout)
-                navigator.serviceWorker.removeEventListener('message', handler)
-                resolve()
-            }
+      const handler = (event: MessageEvent) => {
+        if (
+          event.data?.type === 'SESSION_RESTORED' ||
+          event.data?.type === 'SESSION_NOT_FOUND'
+        ) {
+          if (event.data?.type === 'SESSION_RESTORED') {
+            const { token, user } = event.data.payload
+            auth.restoreSession(token, user)
+          } else {
+            auth.clearLocalSession()
+          }
+          clearTimeout(timeout)
+          navigator.serviceWorker.removeEventListener('message', handler)
+          resolve()
         }
 
         navigator.serviceWorker.addEventListener('message', handler)

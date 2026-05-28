@@ -124,6 +124,7 @@ async function submitBooking() {
   try {
     await GqlCreateLoan({
       classroomCode: form.classroomCode,
+      userId:        auth.user.userId,
       loanDate:      form.date,
       startTime:     form.startTime,
       endTime:       form.endTime,
