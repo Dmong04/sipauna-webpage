@@ -10,15 +10,16 @@ export default defineNuxtConfig({
     '@nuxtjs/color-mode',
     '@pinia/nuxt',
     '@vite-pwa/nuxt',
-    '@nuxtjs/supabase'
+    'nuxt-graphql-client',
   ],
-  // @ts-ignore
-  supabase: {
-    redirectOptions: {
-      login: '/login',
-      callback: '/confirm',
-      exclude: ['/', '/dashboard', '/dashboard/*', '/login'],
-    }
+
+  'graphql-client': {
+    clients: {
+      default: {
+        host: process.env.GQL_HOST ?? 'http://localhost:3000/api/graphql',
+        schema: resolve(__dirname, 'server/graphql/schema.graphql'),
+      },
+    },
   },
   pwa: {
     strategies: "injectManifest",
@@ -132,8 +133,7 @@ export default defineNuxtConfig({
       ],
     },
     devOptions: {
-      enabled: true,
-      type: "module",
+      enabled: false,
     },
   },
   routeRules: {

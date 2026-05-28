@@ -13,6 +13,11 @@ type Role {
   name:   String!
 }
 
+type ProfessorProfile {
+  userId:   ID!
+  fullName: String!
+}
+
 type AuthPayload {
   token: String!
   user:  User!
@@ -49,14 +54,15 @@ type Loan {
 # ── Queries ───────────────────────────────────────────────────────────────────
 
 type Query {
-  users:                      [User!]!
-  user(userId: ID!):          User
-  roles:                      [Role!]!
-  classrooms:                 [Classroom!]!
+  users:                       [User!]!
+  user(userId: ID!):           User
+  roles:                       [Role!]!
+  professors:                  [ProfessorProfile!]!
+  classrooms:                  [Classroom!]!
   classroom(classroomId: ID!): Classroom
-  schedules:                  [Schedule!]!
-  loans:                      [Loan!]!
-  loansByUser(userId: ID!):   [Loan!]!
+  schedules:                   [Schedule!]!
+  loans:                       [Loan!]!
+  loansByUser(userId: ID!):    [Loan!]!
 }
 
 # ── Mutations ─────────────────────────────────────────────────────────────────
@@ -72,6 +78,17 @@ type Mutation {
   createClassroom(code: String!, capacity: Int!): Classroom
   updateClassroom(classroomId: ID!, code: String, capacity: Int): Classroom
   deleteClassroom(classroomId: ID!): Boolean
+
+  createSchedule(
+    classroomCode:   String!
+    subject:         String!
+    professorUserId: ID!
+    day:             String!
+    startTime:       String!
+    endTime:         String!
+  ): Schedule
+
+  deleteSchedule(scheduleId: ID!): Boolean
 
   createLoan(
     classroomCode: String!

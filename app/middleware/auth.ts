@@ -38,13 +38,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
                 resolve()
             }
         }
-      }
 
-      navigator.serviceWorker.addEventListener('message', handler)
+        navigator.serviceWorker.addEventListener('message', handler)
 
-      navigator.serviceWorker.ready.then((registration) => {
-        registration.active?.postMessage({ type: 'GET_SESSION' })
-      })
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.active?.postMessage({ type: 'GET_SESSION' })
+        })
     })
   }
 
