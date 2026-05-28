@@ -18,7 +18,7 @@
       <!-- Título -->
       <h2 class="text-gray-900 dark:text-gray-100 font-semibold mt-4 text-xl">El equipo</h2>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 text-center">
-        Desarrollado por estudiantes de la UNA sede Chorotega
+        Desarrollado por estudiantes de la UNA Liberia sede Chorotega
       </p>
 
       <!-- Devs -->
