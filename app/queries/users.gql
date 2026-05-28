@@ -10,3 +10,65 @@ mutation Login($email: String!, $password: String!) {
     }
   }
 }
+
+mutation Register($fullname: String!, $email: String!, $password: String!, $roleName: String) {
+  register(fullname: $fullname, email: $email, password: $password, roleName: $roleName) {
+    token
+    user {
+      userId
+      fullname
+      email
+      roleId
+      roleName
+    }
+  }
+}
+
+query getUsers {
+  users {
+    userId
+    fullname
+    email
+    roleId
+    roleName
+  }
+}
+
+query getRoles {
+  roles {
+    roleId
+    name
+  }
+}
+
+mutation createUser(
+  $fullname: String!
+  $email: String!
+  $password: String!
+  $roleName: String!
+  $legalId: String!
+) {
+  createUser(
+    fullname: $fullname
+    email: $email
+    password: $password
+    roleName: $roleName
+    legalId: $legalId
+  ) {
+    userId
+    fullname
+    email
+    roleName
+  }
+}
+
+mutation updateUserRole($userId: ID!, $roleName: String!) {
+  updateUserRole(userId: $userId, roleName: $roleName) {
+    userId
+    roleName
+  }
+}
+
+mutation deleteUser($userId: ID!) {
+  deleteUser(userId: $userId)
+}
