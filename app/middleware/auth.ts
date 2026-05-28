@@ -16,6 +16,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
                 if (event.data?.type === 'SESSION_RESTORED') {
                     const { token, user } = event.data.payload
                     auth.restoreSession(token, user)
+                    useGqlToken(token)
                 } else {
                     auth.clearLocalSession()
                 }

@@ -9,6 +9,7 @@ export default defineNuxtPlugin(() => {
         if (event.data?.type === 'SESSION_RESTORED') {
             const { token, user } = event.data.payload
             auth.restoreSession(token, user)
+            useGqlToken(token)               // re-adjunta el JWT al cliente GraphQL
         }
 
         if (event.data?.type === 'SESSION_NOT_FOUND') {

@@ -2,11 +2,16 @@ import { makeExecutableSchema } from "@graphql-tools/schema";
 import { createYoga } from "graphql-yoga";
 import { resolvers } from "../graphql/resolvers";
 import { typeDefs } from "../graphql/schema"
+import { getUserFromAuthHeader, type GqlContext } from "../utils/auth"
 
-const yoga = createYoga({
+const yoga = createYoga<GqlContext>({
     schema: makeExecutableSchema({ typeDefs, resolvers }),
     graphqlEndpoint: '/api/graphql',
     graphiql: process.env.NODE_ENV === 'development',
+    // Contexto: verifica el JWT del header Authorization en cada request
+    context: ({ request }): GqlContext => ({
+        user: getUserFromAuthHeader(request.headers.get('authorization')),
+    }),
 })
 
 export default defineEventHandler(async (event) => {

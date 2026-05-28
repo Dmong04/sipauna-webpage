@@ -28,7 +28,6 @@ query getLoansByUser($userId: ID!) {
 
 mutation createLoan(
   $classroomCode: String!
-  $userId: ID!
   $loanDate: String!
   $startTime: String!
   $endTime: String!
@@ -36,7 +35,6 @@ mutation createLoan(
 ) {
   createLoan(
     classroomCode: $classroomCode
-    userId: $userId
     loanDate: $loanDate
     startTime: $startTime
     endTime: $endTime

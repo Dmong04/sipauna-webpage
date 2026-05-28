@@ -13,12 +13,27 @@ const handleSubmit = async () => {
   error.value   = ''
   loading.value = true
   try {
-    const result = await GqlLogin({ email: formData.email, password: formData.password })
     const auth = useAuthStore()
-    await auth.setSession(result.login.token, result.login.user)
+
+    if (state.value === 'login') {
+      const { login } = await GqlLogin({ email: formData.email, password: formData.password })
+      useGqlToken(login.token)               // envía Authorization: Bearer <jwt>
+      await auth.setSession(login.token, login.user)
+    } else {
+      const { register } = await GqlRegister({
+        fullname: formData.name,
+        email:    formData.email,
+        password: formData.password,
+      })
+      useGqlToken(register.token)
+      await auth.setSession(register.token, register.user)
+    }
+
     navigateTo('/dashboard', { replace: true })
-  } catch {
-    error.value = 'Credenciales incorrectas. Intente de nuevo.'
+  } catch (e: any) {
+    error.value = state.value === 'login'
+      ? 'Credenciales incorrectas. Intente de nuevo.'
+      : (e?.gqlErrors?.[0]?.message ?? 'No se pudo crear la cuenta. Intente de nuevo.')
   } finally {
     loading.value = false
   }

@@ -16,8 +16,10 @@
     "@supabase/supabase-js": "^2.106.0",
     "@tailwindcss/vite": "^4.2.2",
     "@vite-pwa/nuxt": "^1.1.1",
+    "bcryptjs": "^3.0.3",
     "graphql": "^16.13.2",
     "graphql-yoga": "^5.21.0",
+    "jsonwebtoken": "^9.0.3",
     "nuxt": "^4.4.2",
     "nuxt-graphql-client": "^0.2.46",
     "tailwindcss": "^4.2.2",
@@ -26,5 +28,8 @@
   },
   "overrides": {
     "immutable": ">=3.8.3"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10"
   }
 }
