@@ -59,10 +59,7 @@ export const typeDefs = `
   type Mutation {
     login(email: String!, password: String!): AuthPayload
 <<<<<<< HEAD
-<<<<<<< HEAD
 =======
-=======
->>>>>>> parent of 6f7f2da (Updates)
     register(fullname: String!, email: String!, password: String!): AuthPayload
 
     createUser(fullname: String!, email: String!, password: String!, roleName: String!, legalId: String!): User

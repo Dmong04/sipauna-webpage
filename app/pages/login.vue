@@ -5,12 +5,9 @@ const showPassword = ref(false)
 
 const formData = reactive({ name: '', email: '', password: '' })
 <<<<<<< HEAD
-<<<<<<< HEAD
 const error = ref('')
 const loading = ref(false)
 =======
-=======
->>>>>>> parent of 6f7f2da (Updates)
 const error    = ref('')
 const loading  = ref(false)
 >>>>>>> parent of 6f7f2da (Updates)
@@ -147,9 +144,6 @@ definePageMeta({ middleware: 'auth' })
 =======
                      transition-colors duration-200"
             />
-<<<<<<< HEAD
->>>>>>> parent of 6f7f2da (Updates)
-=======
 >>>>>>> parent of 6f7f2da (Updates)
           </div>
 
