@@ -177,6 +177,163 @@ export const resolvers = {
       }
     },
 
+<<<<<<< HEAD
+=======
+    register: async (
+      _: unknown,
+      { fullname, email, password }: { fullname: string; email: string; password: string }
+    ) => {
+      // Validación mínima
+      if (!fullname?.trim() || !email?.trim() || !password)
+        throw new GraphQLError('Todos los campos son obligatorios')
+      if (password.length < 8)
+        throw new GraphQLError('La contraseña debe tener al menos 8 caracteres')
+
+      // ¿Correo ya registrado?
+      const { data: existing } = await supabase
+        .from('User').select('userId').eq('email', email).maybeSingle()
+      if (existing) throw new GraphQLError('El correo ya está registrado')
+
+      // Rol por defecto para auto-registro: estudiante
+      const { data: role, error: roleErr } = await supabase
+        .from('Role').select('roleId').eq('name', 'estudiante').single()
+      if (roleErr || !role) throw new GraphQLError('No se pudo asignar el rol')
+
+      const hash = await hashPassword(password)
+
+      const { data: newUser, error: userErr } = await supabase
+        .from('User')
+        .insert({ email, password: hash, roleId: (role as any).roleId })
+        .select('userId, email, roleId')
+        .single()
+      if (userErr || !newUser) throw new GraphQLError('No se pudo crear el usuario')
+
+      // Perfil de estudiante (legalId generado para el prototipo)
+      await supabase.from('Student').insert({
+        fullName: fullname.trim(),
+        legalId:  `EST-${Date.now()}`,
+        userId:   (newUser as any).userId,
+      })
+
+      const token = signToken({ userId: (newUser as any).userId, roleName: 'estudiante' })
+      return {
+        token,
+        user: {
+          userId:   (newUser as any).userId,
+          email:    (newUser as any).email,
+          fullname: fullname.trim(),
+          roleId:   (newUser as any).roleId,
+          roleName: 'estudiante',
+        },
+      }
+    },
+
+    // ── Administración de usuarios (solo admin) ─────────────────────────────────
+
+    createUser: async (
+      _: unknown,
+      args: { fullname: string; email: string; password: string; roleName: string; legalId: string },
+      ctx: GqlContext
+    ) => {
+      requireAdmin(ctx)
+      const { fullname, email, password, roleName, legalId } = args
+
+      const profile = PROFILE_BY_ROLE[roleName]
+      if (!profile) throw new GraphQLError('Rol inválido')
+      if (!fullname?.trim() || !email?.trim() || !legalId?.trim())
+        throw new GraphQLError('Todos los campos son obligatorios')
+      if (!password || password.length < 8)
+        throw new GraphQLError('La contraseña debe tener al menos 8 caracteres')
+
+      // ¿Correo ya registrado?
+      const { data: existing } = await supabase
+        .from('User').select('userId').eq('email', email).maybeSingle()
+      if (existing) throw new GraphQLError('El correo ya está registrado')
+
+      const { data: role, error: roleErr } = await supabase
+        .from('Role').select('roleId').eq('name', roleName).single()
+      if (roleErr || !role) throw new GraphQLError('Rol no encontrado')
+
+      const hash = await hashPassword(password)
+
+      const { data: newUser, error: userErr } = await supabase
+        .from('User')
+        .insert({ email, password: hash, roleId: (role as any).roleId })
+        .select('userId, email, roleId')
+        .single()
+      if (userErr || !newUser) throw new GraphQLError('No se pudo crear el usuario')
+
+      // Crear el perfil en la tabla correspondiente al rol
+      const { error: profErr } = await supabase
+        .from(profile.table)
+        .insert({ [profile.nameCol]: fullname.trim(), legalId: legalId.trim(), userId: (newUser as any).userId })
+
+      if (profErr) {
+        // Rollback manual del User si el perfil falla (p.ej. legalId duplicado)
+        await supabase.from('User').delete().eq('userId', (newUser as any).userId)
+        throw new GraphQLError('No se pudo crear el perfil (¿identificación duplicada?)')
+      }
+
+      return {
+        userId:   (newUser as any).userId,
+        email:    (newUser as any).email,
+        fullname: fullname.trim(),
+        roleId:   (newUser as any).roleId,
+        roleName,
+      }
+    },
+
+    updateUserRole: async (
+      _: unknown,
+      { userId, roleName }: { userId: string; roleName: string },
+      ctx: GqlContext
+    ) => {
+      const caller = requireAdmin(ctx)
+      if (!PROFILE_BY_ROLE[roleName]) throw new GraphQLError('Rol inválido')
+      if (caller.userId === userId)
+        throw new GraphQLError('No puede cambiar su propio rol')
+
+      const { data: role, error: roleErr } = await supabase
+        .from('Role').select('roleId').eq('name', roleName).single()
+      if (roleErr || !role) throw new GraphQLError('Rol no encontrado')
+
+      const { data, error } = await supabase
+        .from('User')
+        .update({ roleId: (role as any).roleId })
+        .eq('userId', userId)
+        .select('userId, email, roleId')
+        .single()
+      if (error) throw new GraphQLError('Usuario no encontrado')
+
+      const nameMap = await getProfileFullNames([userId])
+      return {
+        userId:   (data as any).userId,
+        email:    (data as any).email,
+        fullname: nameMap[userId] ?? 'Usuario',
+        roleId:   (data as any).roleId,
+        roleName,
+      }
+    },
+
+    deleteUser: async (_: unknown, { userId }: { userId: string }, ctx: GqlContext) => {
+      const caller = requireAdmin(ctx)
+      if (caller.userId === userId)
+        throw new GraphQLError('No puede eliminar su propia cuenta')
+
+      // Orden por FKs: préstamos (RESTRICT) → perfiles → usuario
+      await supabase.from('Loan').delete().eq('userId', userId)
+      await Promise.all([
+        supabase.from('Admin').delete().eq('userId', userId),
+        supabase.from('Professor').delete().eq('userId', userId),
+        supabase.from('Student').delete().eq('userId', userId),
+        supabase.from('Guest').delete().eq('userId', userId),
+      ])
+      const { error } = await supabase.from('User').delete().eq('userId', userId)
+      if (error) throw new GraphQLError('No se pudo eliminar el usuario')
+      return true
+    },
+
+>>>>>>> parent of 6f7f2da (Updates)
     createClassroom: async (
       _: unknown,
       { code, capacity }: { code: string; capacity: number }

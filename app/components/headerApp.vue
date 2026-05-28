@@ -4,12 +4,27 @@ const colorMode = useColorMode()
 const route = useRoute()
 const auth = useAuthStore()
 
+<<<<<<< HEAD
 const navItems = [
   { to: '/dashboard', label: 'Inicio' },
   { to: '/dashboard/schedules', label: 'Horarios' },
   { to: '/dashboard/booking', label: 'Solicitud de reservación' },
   { to: '/dashboard/availability', label: 'Comprobar disponibilidad' },
 ]
+=======
+const navItems = computed(() => {
+  const items = [
+    { to: '/dashboard', label: 'Inicio' },
+    { to: '/dashboard/schedules', label: 'Horarios' },
+    { to: '/dashboard/booking', label: 'Solicitud de reservación' },
+    { to: '/dashboard/availability', label: 'Comprobar disponibilidad' },
+  ]
+  if (auth.user?.roleName === 'admin') {
+    items.push({ to: '/dashboard/users', label: 'Usuarios' })
+  }
+  return items
+})
+>>>>>>> parent of 6f7f2da (Updates)
 
 const userInitial = computed(() =>
   auth.user?.fullname?.charAt(0)?.toUpperCase() ?? '?'

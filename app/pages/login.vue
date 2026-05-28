@@ -4,8 +4,13 @@ const colorMode = useColorMode()
 const showPassword = ref(false)
 
 const formData = reactive({ name: '', email: '', password: '' })
+<<<<<<< HEAD
 const error = ref('')
 const loading = ref(false)
+=======
+const error    = ref('')
+const loading  = ref(false)
+>>>>>>> parent of 6f7f2da (Updates)
 
 const handleSubmit = async () => {
   error.value = ''
@@ -20,6 +25,24 @@ const handleSubmit = async () => {
     await auth.setSession(token, user)
     await navigateTo('/dashboard', { replace: true })
 
+<<<<<<< HEAD
+=======
+    if (state.value === 'login') {
+      const { login } = await GqlLogin({ email: formData.email, password: formData.password })
+      useGqlToken(login.token)               // envía Authorization: Bearer <jwt>
+      await auth.setSession(login.token, login.user)
+    } else {
+      const { register } = await GqlRegister({
+        fullname: formData.name,
+        email:    formData.email,
+        password: formData.password,
+      })
+      useGqlToken(register.token)
+      await auth.setSession(register.token, register.user)
+    }
+
+    navigateTo('/dashboard', { replace: true })
+>>>>>>> parent of 6f7f2da (Updates)
   } catch (e: any) {
     error.value = 'Credenciales incorrectas. Intente de nuevo.'
   } finally {
@@ -116,7 +139,12 @@ definePageMeta({ middleware: 'auth' })
                      placeholder-gray-400 dark:placeholder-gray-500
                      text-sm px-4 py-2.5
                      focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent
+<<<<<<< HEAD
                      transition-colors duration-200" />
+=======
+                     transition-colors duration-200"
+            />
+>>>>>>> parent of 6f7f2da (Updates)
           </div>
 
           <!-- Correo -->
