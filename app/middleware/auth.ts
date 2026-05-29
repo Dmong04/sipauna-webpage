@@ -1,4 +1,5 @@
 export default defineNuxtRouteMiddleware(async (to) => {
+  if (import.meta.server) return
   const publicRoutes = ['/login', '/manifest.webmanifest']
   if (publicRoutes.includes(to.path)) return
 
