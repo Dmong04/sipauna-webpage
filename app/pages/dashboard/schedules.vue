@@ -11,7 +11,7 @@ interface Schedule {
   teacherName:   string
 }
 
-const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 const DAY_COLORS: Record<string, string> = {
   'Lunes':     'bg-blue-100   text-blue-700   dark:bg-blue-900/30   dark:text-blue-400',
@@ -19,6 +19,7 @@ const DAY_COLORS: Record<string, string> = {
   'Miércoles': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   'Jueves':    'bg-amber-100  text-amber-700  dark:bg-amber-900/30  dark:text-amber-400',
   'Viernes':   'bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-400',
+  'Sábado':    'bg-pink-100   text-pink-700   dark:bg-pink-900/30   dark:text-pink-400',
 }
 
 const auth     = useAuthStore()
@@ -58,6 +59,17 @@ const availableCodes = computed(() =>
 )
 
 onMounted(fetchSchedules)
+
+const showImportModal = ref(false)
+ 
+function buildSchedules() {
+  showImportModal.value = true
+}
+ 
+function onImportSuccess() {
+  showImportModal.value = false
+  fetchSchedules()  // recarga la tabla automáticamente
+}
 </script>
 
 <template>
@@ -200,6 +212,12 @@ onMounted(fetchSchedules)
     <p v-if="isAdmin" class="mx-2 mt-4 text-xs text-gray-400 dark:text-gray-600">
       La gestión de horarios (crear, editar, eliminar) estará disponible en una próxima versión.
     </p>
+
+<ModalImportExcel
+    v-if="showImportModal"
+    @close="showImportModal = false"
+    @success="onImportSuccess"
+  />
 
   </section>
 </template>

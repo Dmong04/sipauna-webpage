@@ -1,4 +1,5 @@
 export const typeDefs = `
+scalar Upload
   # ── Types ────────────────────────────────────────────────────────────────────
 
   type User {
@@ -52,6 +53,17 @@ export const typeDefs = `
     status:        String!
   }
 
+  type ImportResult {
+    success:    Boolean!
+    professors: Int!
+    areas:      Int!
+    classrooms: Int!
+    courses:    Int!
+    schedules:  Int!
+    skipped:    Int!
+    errors:     [String!]!
+}
+
   # ── Queries ──────────────────────────────────────────────────────────────────
 
   type Query {
@@ -79,6 +91,7 @@ export const typeDefs = `
     createClassroom(code: String!, capacity: Int!): Classroom
     updateClassroom(classroomId: ID!, code: String, capacity: Int): Classroom
     deleteClassroom(classroomId: ID!): Boolean
+    importExcel(file: Upload!): ImportResult!
 
     createSchedule(
       classroomCode:   String!

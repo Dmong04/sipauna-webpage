@@ -1,9 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from 'url'
-import { dirname, resolve } from 'path'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineNuxtConfig({
   modules: [
@@ -17,13 +14,13 @@ export default defineNuxtConfig({
     clients: {
       default: {
         host: process.env.GQL_HOST ?? 'http://localhost:3000/api/graphql',
-        schema: resolve(__dirname, 'server/graphql/schema.graphql'),
+        schema: fileURLToPath(new URL('server/graphql/schema.graphql', import.meta.url)),
       },
     },
   },
   pwa: {
     strategies: "injectManifest",
-    srcDir: resolve(__dirname, "public"),
+    srcDir: fileURLToPath(new URL('public', import.meta.url)),
     filename: "sw-custom.js",
     registerType: "autoUpdate",
     injectManifest: {
@@ -156,7 +153,13 @@ export default defineNuxtConfig({
         '@vue/devtools-core',
         '@vue/devtools-kit',
         'workbox-window',
+        'xlsx',
       ]
     }
+  },
+  nitro: {
+    externals: {
+      inline: ['xlsx'],
+    },
   },
 })
