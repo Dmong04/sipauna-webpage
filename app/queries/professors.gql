@@ -1,0 +1,3 @@
+query CheckProfessorExists($fullName: String!) {
+  checkProfessorExists(fullName: $fullName)
+}

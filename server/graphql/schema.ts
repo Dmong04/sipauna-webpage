@@ -76,6 +76,7 @@ scalar Upload
     schedules:                   [Schedule!]!
     loans:                       [Loan!]!
     loansByUser(userId: ID!):    [Loan!]!
+    checkProfessorExists(fullName: String!): Boolean!
   }
 
   # ── Mutations ────────────────────────────────────────────────────────────────
