@@ -1,3 +1,11 @@
 query CheckProfessorExists($fullName: String!) {
   checkProfessorExists(fullName: $fullName)
 }
+
+# queries/CheckProfessorByLegalId.gql
+query CheckProfessorByLegalId($legalId: String!) {
+  checkProfessorByLegalId(legalId: $legalId) {
+    userId
+    fullName
+  }
+}

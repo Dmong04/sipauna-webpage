@@ -4,29 +4,121 @@ const colorMode = useColorMode()
 const showPassword = ref(false)
 const auth = useAuthStore()
 
-const formData = reactive({ name: '', email: '', password: '', roleName: 'estudiante' })
+const formData = reactive({
+  name: '',
+  email: '',
+  password: '',
+  roleName: 'estudiante',
+  legalId: '',
+})
 const error = ref('')
 const loading = ref(false)
 
-// ── Validación de profesor ─────────────────────────────────────────────────
+// ── Roles que requieren validación de cédula ───────────────────────────────
+const needsLegalIdCheck = computed(() =>
+  ['profesor', 'estudiante', 'invitado'].includes(formData.roleName)
+)
+
+// ── Validación de cédula (genérica por rol) ────────────────────────────────
+const legalIdStatus = ref<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
+const legalIdError = ref('')
+const legalIdHint = ref('')
+let legalIdTimer: ReturnType<typeof setTimeout>
+
+const checkLegalIdByRole = async (legalId: string) => {
+  const trimmed = legalId.trim()
+  if (!trimmed) {
+    legalIdStatus.value = 'idle'
+    legalIdError.value = ''
+    legalIdHint.value = ''
+    return
+  }
+
+  legalIdStatus.value = 'checking'
+  legalIdError.value = ''
+  legalIdHint.value = ''
+
+  try {
+    if (formData.roleName === 'profesor') {
+      const { checkProfessorByLegalId } = await GqlCheckProfessorByLegalId({ legalId: trimmed })
+
+      if (!checkProfessorByLegalId) {
+        legalIdStatus.value = 'invalid'
+        legalIdError.value = 'No se encontró ningún profesor con esa cédula.'
+      } else if (checkProfessorByLegalId.userId) {
+        legalIdStatus.value = 'invalid'
+        legalIdError.value = 'Este profesor ya tiene una cuenta registrada.'
+      } else {
+        legalIdStatus.value = 'valid'
+        legalIdHint.value = checkProfessorByLegalId.fullName
+      }
+
+    } else if (formData.roleName === 'estudiante') {
+      const { checkStudentByLegalId } = await GqlCheckStudentByLegalId({ legalId: trimmed })
+
+      if (checkStudentByLegalId?.userId) {
+        // Existe y ya tiene cuenta → bloquear
+        legalIdStatus.value = 'invalid'
+        legalIdError.value = 'Ya existe una cuenta registrada con esa cédula.'
+      } else {
+        // No existe en la tabla, o existe sin userId → libre para registrarse
+        legalIdStatus.value = 'valid'
+        legalIdHint.value = checkStudentByLegalId?.fullName ?? ''
+      }
+
+    } else if (formData.roleName === 'invitado') {
+      const { checkGuestByLegalId } = await GqlCheckGuestByLegalId({ legalId: trimmed })
+
+      if (checkGuestByLegalId?.userId) {
+        // Existe y ya tiene cuenta → bloquear
+        legalIdStatus.value = 'invalid'
+        legalIdError.value = 'Ya existe una cuenta registrada con esa cédula.'
+      } else {
+        // No existe en la tabla, o existe sin userId → libre para registrarse
+        legalIdStatus.value = 'valid'
+        legalIdHint.value = checkGuestByLegalId?.fullname ?? ''
+      }
+    }
+  } catch {
+    legalIdStatus.value = 'idle'
+    legalIdError.value = 'No se pudo verificar la cédula. Intente de nuevo.'
+  }
+}
+
+const checkLegalId = (legalId: string) => {
+  clearTimeout(legalIdTimer)
+  if (!legalId.trim()) {
+    legalIdStatus.value = 'idle'
+    legalIdError.value = ''
+    legalIdHint.value = ''
+    return
+  }
+  legalIdStatus.value = 'checking'
+  legalIdTimer = setTimeout(() => checkLegalIdByRole(legalId), 500)
+}
+
+const checkLegalIdOnBlur = (legalId: string) => {
+  clearTimeout(legalIdTimer)
+  if (!legalId.trim() || legalIdStatus.value === 'valid') return
+  checkLegalIdByRole(legalId)
+}
+
+// ── Validación de nombre (solo profesor) ──────────────────────────────────
 const professorStatus = ref<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
 const professorError = ref('')
-let debounceTimer: ReturnType<typeof setTimeout>
+let nameTimer: ReturnType<typeof setTimeout>
 
 const checkProfessor = (fullName: string) => {
-  clearTimeout(debounceTimer)
+  clearTimeout(nameTimer)
   const trimmed = fullName.trim()
-
   if (!trimmed) {
     professorStatus.value = 'idle'
     professorError.value = ''
     return
   }
-
   professorStatus.value = 'checking'
   professorError.value = ''
-
-  debounceTimer = setTimeout(async () => {
+  nameTimer = setTimeout(async () => {
     try {
       const { checkProfessorExists } = await GqlCheckProfessorExists({ fullName: trimmed })
       professorStatus.value = checkProfessorExists ? 'valid' : 'invalid'
@@ -41,10 +133,9 @@ const checkProfessor = (fullName: string) => {
 }
 
 const checkProfessorOnBlur = async (fullName: string) => {
-  clearTimeout(debounceTimer)
+  clearTimeout(nameTimer)
   const trimmed = fullName.trim()
   if (!trimmed || professorStatus.value === 'valid') return
-
   professorStatus.value = 'checking'
   try {
     const { checkProfessorExists } = await GqlCheckProfessorExists({ fullName: trimmed })
@@ -58,19 +149,28 @@ const checkProfessorOnBlur = async (fullName: string) => {
   }
 }
 
-// Resetear validación al cambiar de rol o de estado
+// ── Reset al cambiar de rol o estado ──────────────────────────────────────
 watch(() => formData.roleName, () => {
+  legalIdStatus.value = 'idle'
+  legalIdError.value = ''
+  legalIdHint.value = ''
   professorStatus.value = 'idle'
   professorError.value = ''
+  formData.legalId = ''
+  formData.name = ''
 })
 
 // ── Submit ─────────────────────────────────────────────────────────────────
 const handleSubmit = async () => {
   error.value = ''
 
-  if (state.value === 'register' && formData.roleName === 'profesor') {
-    if (professorStatus.value !== 'valid') {
-      error.value = 'Debés ingresar un nombre de profesor registrado en el sistema.'
+  if (state.value === 'register') {
+    if (needsLegalIdCheck.value && legalIdStatus.value !== 'valid') {
+      error.value = 'Debés ingresar una cédula válida antes de continuar.'
+      return
+    }
+    if (formData.roleName === 'profesor' && professorStatus.value !== 'valid') {
+      error.value = 'Debes ingresar un nombre de profesor registrado en el sistema.'
       return
     }
   }
@@ -87,14 +187,14 @@ const handleSubmit = async () => {
         email: formData.email,
         password: formData.password,
         roleName: formData.roleName,
+        legalId: formData.legalId,
       })
       useGqlToken(register.token)
       await auth.setSession(register.token, register.user)
     }
     navigateTo('/dashboard', { replace: true })
   } catch (e: any) {
-    const gqlMsg = e?.gqlErrors?.[0]?.message
-    error.value = gqlMsg ?? 'Error al iniciar sesión. Intente de nuevo.'
+    error.value = e?.gqlErrors?.[0]?.message ?? 'Error al procesar la solicitud. Intente de nuevo.'
   } finally {
     loading.value = false
   }
@@ -104,6 +204,11 @@ const toggleState = () => {
   state.value = state.value === 'login' ? 'register' : 'login'
   error.value = ''
   formData.roleName = 'estudiante'
+  formData.legalId = ''
+  formData.name = ''
+  legalIdStatus.value = 'idle'
+  legalIdError.value = ''
+  legalIdHint.value = ''
   professorStatus.value = 'idle'
   professorError.value = ''
 }
@@ -131,7 +236,7 @@ definePageMeta({ middleware: 'auth' })
         <p class="text-red-200 text-sm leading-relaxed max-w-xs mx-auto">
           Sistema Institucional para el Préstamo de Aulas
         </p>
-        <p class="text-red-300/70 text-xs mt-1">Sede Chorotega — Universidad Nacional</p>
+        <p class="text-red-300/70 text-xs mt-1">Sede Regional Chorotega — Universidad Nacional</p>
       </div>
     </div>
 
@@ -155,7 +260,7 @@ definePageMeta({ middleware: 'auth' })
       <!-- Logo mobile -->
       <div class="lg:hidden mb-8 text-center">
         <img src="/img/LogoUNA.png" alt="Logo UNA" class="h-16 w-auto mx-auto mb-3" />
-        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Sede Chorotega — Universidad Nacional</p>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Sede Regional Chorotega — Universidad Nacional</p>
       </div>
 
       <!-- Tarjeta del formulario -->
@@ -174,82 +279,148 @@ definePageMeta({ middleware: 'auth' })
 
         <form @submit.prevent="handleSubmit" novalidate class="space-y-4">
 
-          <!-- Nombre completo (solo registro) -->
-          <div v-if="state !== 'login'">
-            <label for="register-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Nombre completo
-            </label>
-            <div class="relative">
-              <input id="register-name" type="text" v-model="formData.name" placeholder="Tu nombre" autocomplete="name"
-                @input="formData.roleName === 'profesor' && checkProfessor(formData.name)"
-                @blur="formData.roleName === 'profesor' && checkProfessorOnBlur(formData.name)" :class="[
-                  'block w-full rounded-lg border text-sm px-4 py-2.5 pr-10',
-                  'bg-white dark:bg-gray-800/60 text-gray-900 dark:text-white',
-                  'placeholder-gray-400 dark:placeholder-gray-500',
-                  'focus:outline-none focus:ring-2 focus:border-transparent transition-colors duration-200',
-                  formData.roleName === 'profesor' && professorStatus === 'valid'
-                    ? 'border-green-500 focus:ring-green-400'
-                    : formData.roleName === 'profesor' && professorStatus === 'invalid'
-                      ? 'border-red-400 focus:ring-red-400'
-                      : 'border-gray-300 dark:border-gray-600 focus:ring-red-400'
-                ]" />
-              <!-- Ícono de estado -->
-              <span v-if="formData.roleName === 'profesor' && professorStatus !== 'idle'"
-                class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                <svg v-if="professorStatus === 'checking'" class="animate-spin h-4 w-4 text-gray-400" fill="none"
-                  viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          <!-- ── Campos solo registro ─────────────────────────────────────── -->
+          <template v-if="state !== 'login'">
+
+            <!-- Cédula -->
+            <div>
+              <label for="register-legalid" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Cédula
+              </label>
+              <div class="relative">
+                <input id="register-legalid" type="text" v-model="formData.legalId" placeholder="Número de cédula"
+                  autocomplete="off" @input="needsLegalIdCheck && checkLegalId(formData.legalId)"
+                  @blur="needsLegalIdCheck && checkLegalIdOnBlur(formData.legalId)" :class="[
+                    'block w-full rounded-lg border text-sm px-4 py-2.5 pr-10',
+                    'bg-white dark:bg-gray-800/60 text-gray-900 dark:text-white',
+                    'placeholder-gray-400 dark:placeholder-gray-500',
+                    'focus:outline-none focus:ring-2 focus:border-transparent transition-colors duration-200',
+                    needsLegalIdCheck && legalIdStatus === 'valid'
+                      ? 'border-green-500 focus:ring-green-400'
+                      : needsLegalIdCheck && legalIdStatus === 'invalid'
+                        ? 'border-red-400 focus:ring-red-400'
+                        : 'border-gray-300 dark:border-gray-600 focus:ring-red-400'
+                  ]" />
+                <span v-if="needsLegalIdCheck && legalIdStatus !== 'idle'"
+                  class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                  <svg v-if="legalIdStatus === 'checking'" class="animate-spin h-4 w-4 text-gray-400" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  <svg v-else-if="legalIdStatus === 'valid'" class="h-4 w-4 text-green-500" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <svg v-else-if="legalIdStatus === 'invalid'" class="h-4 w-4 text-red-500" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </span>
+              </div>
+              <p v-if="needsLegalIdCheck && legalIdError"
+                class="mt-1.5 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
-                <svg v-else-if="professorStatus === 'valid'" class="h-4 w-4 text-green-500" fill="none"
-                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                {{ legalIdError }}
+              </p>
+              <p v-else-if="needsLegalIdCheck && legalIdStatus === 'valid'"
+                class="mt-1.5 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                <svg v-else-if="professorStatus === 'invalid'" class="h-4 w-4 text-red-500" fill="none"
-                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                Cédula verificada
+                <span v-if="legalIdHint" class="font-semibold ml-1">— {{ legalIdHint }}</span>
+              </p>
+            </div>
+
+            <!-- Nombre completo -->
+            <div>
+              <label for="register-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Nombre completo
+              </label>
+              <div class="relative">
+                <input id="register-name" type="text" v-model="formData.name" placeholder="Tu nombre completo"
+                  autocomplete="name" @input="formData.roleName === 'profesor' && checkProfessor(formData.name)"
+                  @blur="formData.roleName === 'profesor' && checkProfessorOnBlur(formData.name)" :class="[
+                    'block w-full rounded-lg border text-sm px-4 py-2.5 pr-10',
+                    'bg-white dark:bg-gray-800/60 text-gray-900 dark:text-white',
+                    'placeholder-gray-400 dark:placeholder-gray-500',
+                    'focus:outline-none focus:ring-2 focus:border-transparent transition-colors duration-200',
+                    formData.roleName === 'profesor' && professorStatus === 'valid'
+                      ? 'border-green-500 focus:ring-green-400'
+                      : formData.roleName === 'profesor' && professorStatus === 'invalid'
+                        ? 'border-red-400 focus:ring-red-400'
+                        : 'border-gray-300 dark:border-gray-600 focus:ring-red-400'
+                  ]" />
+                <span v-if="formData.roleName === 'profesor' && professorStatus !== 'idle'"
+                  class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                  <svg v-if="professorStatus === 'checking'" class="animate-spin h-4 w-4 text-gray-400" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  <svg v-else-if="professorStatus === 'valid'" class="h-4 w-4 text-green-500" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <svg v-else-if="professorStatus === 'invalid'" class="h-4 w-4 text-red-500" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </span>
+              </div>
+              <p v-if="formData.roleName === 'profesor' && professorError"
+                class="mt-1.5 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
-              </span>
+                {{ professorError }}
+              </p>
+              <p v-else-if="formData.roleName === 'profesor' && professorStatus === 'valid'"
+                class="mt-1.5 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Nombre encontrado en el sistema.
+              </p>
             </div>
 
-            <!-- Feedback de validación -->
-            <p v-if="formData.roleName === 'profesor' && professorError"
-              class="mt-1.5 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
-              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
-              {{ professorError }}
-            </p>
-            <p v-else-if="formData.roleName === 'profesor' && professorStatus === 'valid'"
-              class="mt-1.5 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              Profesor encontrado en el sistema.
-            </p>
-          </div>
-
-          <!-- Rol (solo registro) -->
-          <div v-if="state !== 'login'">
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Tipo de cuenta
-            </label>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" @click="formData.roleName = 'estudiante'" :class="[
-                'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
-                formData.roleName === 'estudiante'
-                  ? 'bg-red-600 border-red-600 text-white'
-                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
-              ]">Estudiante</button>
-              <button type="button" @click="formData.roleName = 'profesor'" :class="[
-                'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
-                formData.roleName === 'profesor'
-                  ? 'bg-red-600 border-red-600 text-white'
-                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
-              ]">Profesor</button>
+            <!-- Rol -->
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Tipo de cuenta
+              </label>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" @click="formData.roleName = 'estudiante'" :class="[
+                  'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
+                  formData.roleName === 'estudiante'
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
+                ]">Estudiante</button>
+                <button type="button" @click="formData.roleName = 'profesor'" :class="[
+                  'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
+                  formData.roleName === 'profesor'
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
+                ]">Profesor</button>
+                <button type="button" @click="formData.roleName = 'invitado'" :class="[
+                  'py-2 rounded-lg border text-sm font-medium transition-colors duration-150',
+                  formData.roleName === 'invitado'
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400'
+                ]">Invitado</button>
+              </div>
             </div>
-          </div>
+
+          </template>
 
           <!-- Correo -->
           <div>

@@ -15,7 +15,7 @@ type Role {
 }
 
 type ProfessorProfile {
-  userId: ID!
+  userId: ID
   fullName: String!
 }
 
@@ -63,6 +63,16 @@ type ImportResult {
   errors: [String!]!
 }
 
+type StudentProfile {
+  userId: ID
+  fullName: String!
+}
+
+type GuestProfile {
+  userId: ID
+  fullname: String!
+}
+
 # ── Queries ───────────────────────────────────────────────────────────────────
 
 type Query {
@@ -75,7 +85,10 @@ type Query {
   schedules: [Schedule!]!
   loans: [Loan!]!
   loansByUser(userId: ID!): [Loan!]!
+  checkProfessorByLegalId(legalId: String!): ProfessorProfile
   checkProfessorExists(fullName: String!): Boolean!
+  checkStudentByLegalId(legalId: String!): StudentProfile
+  checkGuestByLegalId(legalId: String!): GuestProfile
 }
 
 # ── Mutations ─────────────────────────────────────────────────────────────────
@@ -87,6 +100,7 @@ type Mutation {
     email: String!
     password: String!
     roleName: String
+    legalId: String
   ): AuthPayload
 
   createUser(
