@@ -67,7 +67,17 @@ export const userMutations = {
             throw new GraphQLError('La contraseña debe tener al menos 8 caracteres')
 
         // ── Validaciones por rol ───────────────────────────────────────────────
-        if (roleName === 'profesor') {
+        if (roleName === 'admin') {
+            const { data: existingAdmin } = await supabase
+                .from('Admin')
+                .select('adminId, userId')
+                .eq('legalId', legalId.trim())
+                .maybeSingle()
+
+            if (existingAdmin)
+                throw new GraphQLError('Ya existe un administrador registrado con esa cédula')
+
+        } else if (roleName === 'profesor') {
             const { data: profByLegalId, error: legalIdErr } = await supabase
                 .from('Professor')
                 .select('professorId, fullName, userId')
@@ -109,7 +119,6 @@ export const userMutations = {
             if (legalIdErr || !guestByLegalId)
                 throw new GraphQLError('No se encontró ningún invitado con esa cédula')
 
-            // Nota: Guest usa 'fullname' (minúscula) a diferencia de Professor y Student
             if (guestByLegalId.fullname.trim().toLowerCase() !== fullname.trim().toLowerCase())
                 throw new GraphQLError('El nombre no corresponde al invitado registrado con esa cédula')
 
@@ -135,15 +144,26 @@ export const userMutations = {
             .single()
         if (userErr || !newUser) throw new GraphQLError('No se pudo crear el usuario')
 
-        // ── Vincular perfil existente ──────────────────────────────────────────
-        const { error: profErr } = await supabase
-            .from(profile.table)
-            .update({ userId: (newUser as any).userId })
-            .eq('legalId', legalId.trim())
+        // ── Vincular o crear perfil según rol ─────────────────────────────────
+        if (roleName === 'admin') {
+            const { error: profErr } = await supabase
+                .from(profile.table)
+                .insert({ [profile.nameCol]: fullname.trim(), legalId: legalId.trim(), userId: (newUser as any).userId })
 
-        if (profErr) {
-            await supabase.from('User').delete().eq('userId', (newUser as any).userId)
-            throw new GraphQLError('No se pudo vincular el perfil al usuario')
+            if (profErr) {
+                await supabase.from('User').delete().eq('userId', (newUser as any).userId)
+                throw new GraphQLError('No se pudo crear el perfil de administrador')
+            }
+        } else {
+            const { error: profErr } = await supabase
+                .from(profile.table)
+                .update({ userId: (newUser as any).userId })
+                .eq('legalId', legalId.trim())
+
+            if (profErr) {
+                await supabase.from('User').delete().eq('userId', (newUser as any).userId)
+                throw new GraphQLError('No se pudo vincular el perfil al usuario')
+            }
         }
 
         return {
