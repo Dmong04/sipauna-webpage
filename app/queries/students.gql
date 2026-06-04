@@ -1,0 +1,6 @@
+query CheckStudentByLegalId($legalId: String!) {
+  checkStudentByLegalId(legalId: $legalId) {
+    userId
+    fullName
+  }
+}

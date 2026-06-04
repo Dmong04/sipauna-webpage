@@ -4,6 +4,7 @@ import { professorQueries } from './resolvers/resolvers.professors'
 import { classroomQueries, classroomMutations } from './resolvers/resolvers.classrooms'
 import { scheduleQueries, scheduleMutations } from './resolvers/resolvers.schedules'
 import { loanQueries, loanMutations } from './resolvers/resolvers.loans'
+import { importMutations } from './resolvers/resolvers.import'
 
 export const resolvers = {
   Query: {
@@ -19,5 +20,6 @@ export const resolvers = {
     ...classroomMutations,
     ...scheduleMutations,
     ...loanMutations,
+    ...importMutations,
   },
 }

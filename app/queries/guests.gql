@@ -1,0 +1,6 @@
+query CheckGuestByLegalId($legalId: String!) {
+  checkGuestByLegalId(legalId: $legalId) {
+    userId
+    fullname
+  }
+}

@@ -1,0 +1,12 @@
+mutation ImportExcel($file: Upload!) {
+  importExcel(file: $file) {
+    success
+    professors
+    areas
+    classrooms
+    courses
+    schedules
+    skipped
+    errors
+  }
+}

@@ -24,7 +24,8 @@
     "nuxt-graphql-client": "^0.2.46",
     "tailwindcss": "^4.3.0",
     "vue": "^3.5.34",
-    "vue-router": "^5.0.7"
+    "vue-router": "^5.0.7",
+    "xlsx": "^0.18.5"
   },
   "overrides": {
     "immutable": ">=3.8.3"

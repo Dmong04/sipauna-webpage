@@ -1,102 +1,141 @@
+scalar Upload
 # ── Types ─────────────────────────────────────────────────────────────────────
 
 type User {
-  userId:   ID!
-  email:    String!
+  userId: ID!
+  email: String!
   fullname: String!
-  roleId:   String!
+  roleId: String!
   roleName: String!
 }
 
 type Role {
   roleId: ID!
-  name:   String!
+  name: String!
 }
 
 type ProfessorProfile {
-  userId:   ID!
+  userId: ID
   fullName: String!
 }
 
 type AuthPayload {
   token: String!
-  user:  User!
+  user: User!
 }
 
 type Classroom {
   classroomId: ID!
-  code:        String!
-  capacity:    Int!
+  code: String!
+  capacity: Int!
 }
 
 type Schedule {
-  scheduleId:    ID!
+  scheduleId: ID!
   classroomCode: String!
-  day:           String!
-  startTime:     String!
-  endTime:       String!
-  subject:       String!
-  teacherName:   String!
+  day: String!
+  startTime: String!
+  endTime: String!
+  subject: String!
+  teacherName: String!
 }
 
 type Loan {
-  loanId:        ID!
+  loanId: ID!
   classroomCode: String!
-  userId:        ID!
+  userId: ID!
   requesterName: String!
-  loanDate:      String!
-  startTime:     String!
-  endTime:       String!
-  reason:        String!
-  status:        String!
+  loanDate: String!
+  startTime: String!
+  endTime: String!
+  reason: String!
+  status: String!
+}
+
+type ImportResult {
+  success: Boolean!
+  professors: Int!
+  areas: Int!
+  classrooms: Int!
+  courses: Int!
+  schedules: Int!
+  skipped: Int!
+  errors: [String!]!
+}
+
+type StudentProfile {
+  userId: ID
+  fullName: String!
+}
+
+type GuestProfile {
+  userId: ID
+  fullname: String!
 }
 
 # ── Queries ───────────────────────────────────────────────────────────────────
 
 type Query {
-  users:                      [User!]!
-  user(userId: ID!):          User
-  roles:                      [Role!]!
-  professors:                 [ProfessorProfile!]!
-  classrooms:                 [Classroom!]!
+  users: [User!]!
+  user(userId: ID!): User
+  roles: [Role!]!
+  professors: [ProfessorProfile!]!
+  classrooms: [Classroom!]!
   classroom(classroomId: ID!): Classroom
-  schedules:                   [Schedule!]!
-  loans:                       [Loan!]!
-  loansByUser(userId: ID!):    [Loan!]!
+  schedules: [Schedule!]!
+  loans: [Loan!]!
+  loansByUser(userId: ID!): [Loan!]!
+  checkProfessorByLegalId(legalId: String!): ProfessorProfile
+  checkProfessorExists(fullName: String!): Boolean!
+  checkStudentByLegalId(legalId: String!): StudentProfile
+  checkGuestByLegalId(legalId: String!): GuestProfile
 }
 
 # ── Mutations ─────────────────────────────────────────────────────────────────
 
 type Mutation {
   login(email: String!, password: String!): AuthPayload
-  register(fullname: String!, email: String!, password: String!, roleName: String): AuthPayload
+  register(
+    fullname: String!
+    email: String!
+    password: String!
+    roleName: String
+    legalId: String
+  ): AuthPayload
 
-  createUser(fullname: String!, email: String!, password: String!, roleName: String!, legalId: String!): User
+  createUser(
+    fullname: String!
+    email: String!
+    password: String!
+    roleName: String!
+    legalId: String!
+  ): User
   updateUserRole(userId: ID!, roleName: String!): User
   deleteUser(userId: ID!): Boolean
 
   createClassroom(code: String!, capacity: Int!): Classroom
   updateClassroom(classroomId: ID!, code: String, capacity: Int): Classroom
   deleteClassroom(classroomId: ID!): Boolean
+  importExcel(file: Upload!): ImportResult!
 
   createSchedule(
-    classroomCode:   String!
-    subject:         String!
+    classroomCode: String!
+    subject: String!
     professorUserId: ID!
-    day:             String!
-    startTime:       String!
-    endTime:         String!
+    day: String!
+    startTime: String!
+    endTime: String!
   ): Schedule
 
   deleteSchedule(scheduleId: ID!): Boolean
 
   createLoan(
     classroomCode: String!
-    userId:        ID!
-    loanDate:      String!
-    startTime:     String!
-    endTime:       String!
-    reason:        String!
+    userId: ID!
+    loanDate: String!
+    startTime: String!
+    endTime: String!
+    reason: String!
   ): Loan
 
   updateLoanStatus(loanId: ID!, status: String!): Loan

@@ -66,6 +66,67 @@ export const userMutations = {
         if (!password || password.length < 8)
             throw new GraphQLError('La contraseña debe tener al menos 8 caracteres')
 
+        // ── Validaciones por rol ───────────────────────────────────────────────
+        if (roleName === 'admin') {
+            const { data: existingAdmin } = await supabase
+                .from('Admin')
+                .select('adminId, userId')
+                .eq('legalId', legalId.trim())
+                .maybeSingle()
+
+            if (existingAdmin)
+                throw new GraphQLError('Ya existe un administrador registrado con esa cédula')
+
+        } else if (roleName === 'profesor') {
+            const { data: profByLegalId, error: legalIdErr } = await supabase
+                .from('Professor')
+                .select('professorId, fullName, userId')
+                .eq('legalId', legalId.trim())
+                .maybeSingle()
+
+            if (legalIdErr || !profByLegalId)
+                throw new GraphQLError('No se encontró ningún profesor con esa cédula')
+
+            if (profByLegalId.fullName.trim().toLowerCase() !== fullname.trim().toLowerCase())
+                throw new GraphQLError('El nombre no corresponde al profesor registrado con esa cédula')
+
+            if (profByLegalId.userId !== null)
+                throw new GraphQLError('Este profesor ya tiene un usuario asignado en el sistema')
+
+        } else if (roleName === 'estudiante') {
+            const { data: studentByLegalId, error: legalIdErr } = await supabase
+                .from('Student')
+                .select('studentId, fullName, userId')
+                .eq('legalId', legalId.trim())
+                .maybeSingle()
+
+            if (legalIdErr || !studentByLegalId)
+                throw new GraphQLError('No se encontró ningún estudiante con esa cédula')
+
+            if (studentByLegalId.fullName.trim().toLowerCase() !== fullname.trim().toLowerCase())
+                throw new GraphQLError('El nombre no corresponde al estudiante registrado con esa cédula')
+
+            if (studentByLegalId.userId !== null)
+                throw new GraphQLError('Este estudiante ya tiene un usuario asignado en el sistema')
+
+        } else if (roleName === 'invitado') {
+            const { data: guestByLegalId, error: legalIdErr } = await supabase
+                .from('Guest')
+                .select('guestId, fullname, userId')
+                .eq('legalId', legalId.trim())
+                .maybeSingle()
+
+            if (legalIdErr || !guestByLegalId)
+                throw new GraphQLError('No se encontró ningún invitado con esa cédula')
+
+            if (guestByLegalId.fullname.trim().toLowerCase() !== fullname.trim().toLowerCase())
+                throw new GraphQLError('El nombre no corresponde al invitado registrado con esa cédula')
+
+            if (guestByLegalId.userId !== null)
+                throw new GraphQLError('Este invitado ya tiene un usuario asignado en el sistema')
+        }
+
+        // ── Verificar email duplicado ──────────────────────────────────────────
         const { data: existing } = await supabase
             .from('User').select('userId').eq('email', email).maybeSingle()
         if (existing) throw new GraphQLError('El correo ya está registrado')
@@ -83,13 +144,26 @@ export const userMutations = {
             .single()
         if (userErr || !newUser) throw new GraphQLError('No se pudo crear el usuario')
 
-        const { error: profErr } = await supabase
-            .from(profile.table)
-            .insert({ [profile.nameCol]: fullname.trim(), legalId: legalId.trim(), userId: (newUser as any).userId })
+        // ── Vincular o crear perfil según rol ─────────────────────────────────
+        if (roleName === 'admin') {
+            const { error: profErr } = await supabase
+                .from(profile.table)
+                .insert({ [profile.nameCol]: fullname.trim(), legalId: legalId.trim(), userId: (newUser as any).userId })
 
-        if (profErr) {
-            await supabase.from('User').delete().eq('userId', (newUser as any).userId)
-            throw new GraphQLError('No se pudo crear el perfil (¿identificación duplicada?)')
+            if (profErr) {
+                await supabase.from('User').delete().eq('userId', (newUser as any).userId)
+                throw new GraphQLError('No se pudo crear el perfil de administrador')
+            }
+        } else {
+            const { error: profErr } = await supabase
+                .from(profile.table)
+                .update({ userId: (newUser as any).userId })
+                .eq('legalId', legalId.trim())
+
+            if (profErr) {
+                await supabase.from('User').delete().eq('userId', (newUser as any).userId)
+                throw new GraphQLError('No se pudo vincular el perfil al usuario')
+            }
         }
 
         return {
