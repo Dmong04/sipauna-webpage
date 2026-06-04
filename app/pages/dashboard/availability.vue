@@ -146,7 +146,8 @@ async function search() {
     results.value = mapped.sort((a, b) => ORDER[a.status] - ORDER[b.status])
     searched.value = true
   } catch (e: any) {
-    error.value = e?.gqlErrors?.[0]?.message ?? 'Error al consultar la disponibilidad.'
+   const isOffline=!navigator.onLine
+   error.value=isOffline ? 'Sin conexion-mostrando datos guardados' : e?.gqlErrors?.[0]?.message ?? 'Error al consultar la disponibilidad'
   } finally {
     loading.value = false
   }

@@ -130,7 +130,9 @@ export default defineNuxtConfig({
       ],
     },
     devOptions: {
-      enabled: false,
+       enabled: true,
+    suppressWarnings: true,
+    type: 'module',
     },
   },
   routeRules: {
