@@ -13,7 +13,7 @@ export default defineNuxtConfig({
   'graphql-client': {
     clients: {
       default: {
-        host: process.env.GQL_HOST ?? 'http://localhost:3000/api/graphql',
+        host: process.env.GQL_HOST!,
         schema: fileURLToPath(new URL('server/graphql/schema.graphql', import.meta.url)),
       },
     },
