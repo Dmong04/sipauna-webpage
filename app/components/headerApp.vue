@@ -4,6 +4,9 @@ const colorMode = useColorMode()
 const route = useRoute()
 const auth = useAuthStore()
 
+const showLogoutModal = ref(false)
+const loggingOut = ref(false)
+
 const navItems = computed(() => {
   const items = [
     { to: '/dashboard', label: 'Inicio' },
@@ -27,13 +30,19 @@ const toggleTheme = () => {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
 
-const logout = async () => {
+async function handleLogout() {
+  loggingOut.value = true
   await auth.clearSession()
+  loggingOut.value = false
+  showLogoutModal.value = false
   navigateTo('/login', { replace: true })
 }
 </script>
 
 <template>
+  <!-- Modal de cierre de sesión -->
+  <LogoutModal v-if="showLogoutModal" :loading="loggingOut" @close="showLogoutModal = false" @confirm="handleLogout" />
+
   <header
     class="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
     <div class="flex items-center justify-between max-w-7xl mx-auto px-4 h-16">
@@ -71,7 +80,8 @@ const logout = async () => {
           </svg>
         </button>
 
-        <button @click="logout" title="Cerrar sesión"
+        <!-- Botón logout desktop -->
+        <button @click="showLogoutModal = true" title="Cerrar sesión"
           class="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -142,7 +152,8 @@ const logout = async () => {
             Cambiar tema
           </button>
 
-          <button @click="logout"
+          <!-- Botón logout mobile -->
+          <button @click="menuOpen = false; showLogoutModal = true"
             class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-red-100 dark:hover:bg-red-900/30 text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200">
             <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round"
