@@ -133,6 +133,6 @@ La aplicación estará disponible en `http://localhost:3000`.
 
 ---
 
-## Repositorio
+## Para leer la documentación detallada de este proyecto, sigue el siguiente link.
 
-[https://github.com/Dmong04/sipauna-webpage](https://github.com/Dmong04/sipauna-webpage)
+[https://deepwiki.com/Dmong04/sipauna-webpage](https://deepwiki.com/Dmong04/sipauna-webpage)
