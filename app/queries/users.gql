@@ -84,3 +84,17 @@ mutation updateUserRole($userId: ID!, $roleName: String!) {
 mutation deleteUser($userId: ID!) {
   deleteUser(userId: $userId)
 }
+
+mutation updateProfile($userId: ID!, $fullname: String, $email: String) {
+  updateProfile(userId: $userId, fullname: $fullname, email: $email) {
+    userId
+    fullname
+    email
+    roleId
+    roleName
+  }
+}
+
+mutation changePassword($userId: ID!, $currentPassword: String!, $newPassword: String!) {
+  changePassword(userId: $userId, currentPassword: $currentPassword, newPassword: $newPassword)
+}
