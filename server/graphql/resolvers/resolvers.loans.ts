@@ -55,6 +55,31 @@ export const loanMutations = {
             .from('Classroom').select('classroomId').eq('code', classroomCode).single()
         if (clsErr || !cls) throw new Error('Aula no encontrada')
 
+        // Verificar conflicto con clases programadas (Schedule)
+        const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+        const dayOfWeek = dayNames[new Date(loanDate + 'T12:00:00').getDay()] ?? ''
+        const { data: scheduleConflict } = await supabase
+            .from('Schedule')
+            .select('scheduleId')
+            .eq('classroomId', (cls as any).classroomId)
+            .eq('day', dayOfWeek)
+            .lt('startTime', endTime)
+            .gt('endTime', startTime)
+        if (scheduleConflict && scheduleConflict.length > 0)
+            throw new Error('El aula tiene una clase programada en ese horario.')
+
+        // Verificar conflicto con reservas existentes (PENDIENTE o APROBADO)
+        const { data: loanConflict } = await supabase
+            .from('Loan')
+            .select('loanId')
+            .eq('classroomId', (cls as any).classroomId)
+            .eq('loanDate', `${loanDate}T00:00:00`)
+            .in('status', ['PENDIENTE', 'APROBADO'])
+            .lt('startTime', endTime)
+            .gt('endTime', startTime)
+        if (loanConflict && loanConflict.length > 0)
+            throw new Error('El aula ya tiene una reserva en ese horario. Por favor seleccione otro.')
+
         const { data, error } = await supabase
             .from('Loan')
             .insert({
