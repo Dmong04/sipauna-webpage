@@ -84,7 +84,7 @@ type Query {
   classrooms: [Classroom!]!
   classroom(classroomId: ID!): Classroom
   schedules: [Schedule!]!
-  loans: [Loan!]!
+  loans(loanDate: String): [Loan!]!
   loansByUser(userId: ID!): [Loan!]!
   checkProfessorByLegalId(legalId: String!): ProfessorProfile
   checkProfessorExists(fullName: String!): Boolean!

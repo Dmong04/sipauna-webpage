@@ -1,5 +1,5 @@
-query getLoans {
-  loans {
+query getLoans($loanDate: String) {
+  loans(loanDate: $loanDate) {
     loanId
     classroomCode
     userId
