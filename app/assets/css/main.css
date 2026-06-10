@@ -25,3 +25,19 @@ body {
 .dark ::selection {
   @apply bg-red-500/30 text-red-100;
 }
+
+/* ── Accesibilidad ───────────────────────────────────────────────────────── */
+
+.high-contrast {
+  filter: contrast(1.4);
+}
+
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}
+
+.text-lg-base {
+  font-size: 1.125rem;
+  line-height: 1.6;
+}

@@ -1,11 +1,48 @@
+query getProfessors {
+  professors {
+    userId
+    fullName
+  }
+}
+
+query getProfessorsFull {
+  professorsFull {
+    professorId
+    fullName
+    legalId
+    userId
+  }
+}
+
 query CheckProfessorExists($fullName: String!) {
   checkProfessorExists(fullName: $fullName)
 }
 
-# queries/CheckProfessorByLegalId.gql
 query CheckProfessorByLegalId($legalId: String!) {
   checkProfessorByLegalId(legalId: $legalId) {
     userId
     fullName
   }
+}
+
+mutation createProfessor($fullName: String!, $legalId: String!) {
+  createProfessor(fullName: $fullName, legalId: $legalId) {
+    professorId
+    fullName
+    legalId
+    userId
+  }
+}
+
+mutation updateProfessor($professorId: ID!, $fullName: String, $legalId: String) {
+  updateProfessor(professorId: $professorId, fullName: $fullName, legalId: $legalId) {
+    professorId
+    fullName
+    legalId
+    userId
+  }
+}
+
+mutation deleteProfessor($professorId: ID!) {
+  deleteProfessor(professorId: $professorId)
 }

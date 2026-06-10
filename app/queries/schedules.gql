@@ -9,3 +9,69 @@ query getSchedules {
     teacherName
   }
 }
+
+mutation createSchedule(
+  $classroomCode: String!
+  $subject: String!
+  $professorUserId: ID!
+  $day: String!
+  $startTime: String!
+  $endTime: String!
+) {
+  createSchedule(
+    classroomCode: $classroomCode
+    subject: $subject
+    professorUserId: $professorUserId
+    day: $day
+    startTime: $startTime
+    endTime: $endTime
+  ) {
+    scheduleId
+    classroomCode
+    day
+    startTime
+    endTime
+    subject
+    teacherName
+  }
+}
+
+mutation updateSchedule(
+  $scheduleId: ID!
+  $classroomCode: String
+  $subject: String
+  $professorUserId: ID
+  $day: String
+  $startTime: String
+  $endTime: String
+) {
+  updateSchedule(
+    scheduleId: $scheduleId
+    classroomCode: $classroomCode
+    subject: $subject
+    professorUserId: $professorUserId
+    day: $day
+    startTime: $startTime
+    endTime: $endTime
+  ) {
+    scheduleId
+    classroomCode
+    day
+    startTime
+    endTime
+    subject
+    teacherName
+  }
+}
+
+mutation deleteSchedule($scheduleId: ID!) {
+  deleteSchedule(scheduleId: $scheduleId)
+}
+
+mutation deleteSchedules($scheduleIds: [ID!]!) {
+  deleteSchedules(scheduleIds: $scheduleIds)
+}
+
+mutation clearScheduleData {
+  clearScheduleData
+}

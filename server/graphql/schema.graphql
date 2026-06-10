@@ -19,6 +19,13 @@ type ProfessorProfile {
   fullName: String!
 }
 
+type ProfessorDetail {
+  professorId: ID!
+  fullName: String!
+  legalId: String!
+  userId: ID
+}
+
 type AuthPayload {
   token: String!
   user: User!
@@ -89,6 +96,7 @@ type Query {
   checkProfessorExists(fullName: String!): Boolean!
   checkStudentByLegalId(legalId: String!): StudentProfile
   checkGuestByLegalId(legalId: String!): GuestProfile
+  professorsFull: [ProfessorDetail!]!
 }
 
 # ── Mutations ─────────────────────────────────────────────────────────────────
@@ -127,7 +135,19 @@ type Mutation {
     endTime: String!
   ): Schedule
 
+  updateSchedule(
+    scheduleId: ID!
+    classroomCode: String
+    subject: String
+    professorUserId: ID
+    day: String
+    startTime: String
+    endTime: String
+  ): Schedule
+
   deleteSchedule(scheduleId: ID!): Boolean
+  deleteSchedules(scheduleIds: [ID!]!): Boolean
+  clearScheduleData: Boolean
 
   createLoan(
     classroomCode: String!
@@ -139,4 +159,11 @@ type Mutation {
   ): Loan
 
   updateLoanStatus(loanId: ID!, status: String!): Loan
+
+  updateProfile(userId: ID!, fullname: String, email: String): User
+  changePassword(userId: ID!, currentPassword: String!, newPassword: String!): Boolean
+
+  createProfessor(fullName: String!, legalId: String!): ProfessorDetail
+  updateProfessor(professorId: ID!, fullName: String, legalId: String): ProfessorDetail
+  deleteProfessor(professorId: ID!): Boolean
 }

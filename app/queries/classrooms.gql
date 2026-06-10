@@ -5,3 +5,23 @@ query getClassrooms {
     capacity
   }
 }
+
+mutation createClassroom($code: String!, $capacity: Int!) {
+  createClassroom(code: $code, capacity: $capacity) {
+    classroomId
+    code
+    capacity
+  }
+}
+
+mutation updateClassroom($classroomId: ID!, $code: String, $capacity: Int) {
+  updateClassroom(classroomId: $classroomId, code: $code, capacity: $capacity) {
+    classroomId
+    code
+    capacity
+  }
+}
+
+mutation deleteClassroom($classroomId: ID!) {
+  deleteClassroom(classroomId: $classroomId)
+}

@@ -1,3 +1,4 @@
+import { GraphQLError } from 'graphql'
 import { supabase } from '../utils/supabase'
 import { mapClassroom } from '../helpers/helpers.mappers'
 
@@ -21,7 +22,7 @@ export const classroomMutations = {
     createClassroom: async (_: unknown, { code, capacity }: { code: string; capacity: number }) => {
         const { data, error } = await supabase
             .from('Classroom').insert({ code, capacity }).select().single()
-        if (error) throw new Error(error.message)
+        if (error) throw new GraphQLError(error.message)
         return mapClassroom(data)
     },
 
@@ -35,14 +36,22 @@ export const classroomMutations = {
 
         const { data, error } = await supabase
             .from('Classroom').update(updates).eq('classroomId', classroomId).select().single()
-        if (error) throw new Error('Aula no encontrada')
+        if (error) throw new GraphQLError('Aula no encontrada')
         return mapClassroom(data)
     },
 
     deleteClassroom: async (_: unknown, { classroomId }: { classroomId: string }) => {
         const { error } = await supabase
             .from('Classroom').delete().eq('classroomId', classroomId)
-        if (error) throw new Error('Aula no encontrada')
+        if (error) {
+            if ((error as any).code === '23503') {
+                throw new GraphQLError(
+                    'No se puede eliminar: el aula tiene horarios o préstamos asociados. ' +
+                    'Eliminá primero esos registros desde Horarios.'
+                )
+            }
+            throw new GraphQLError(error.message)
+        }
         return true
     },
 }
