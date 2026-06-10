@@ -5,11 +5,19 @@ import { mapLoan } from '../helpers/helpers.mappers'
 const VALID_STATUSES = ['PENDIENTE', 'APROBADO', 'RECHAZADO', 'CANCELADO']
 
 export const loanQueries = {
-    loans: async () => {
-        const { data, error } = await supabase
+    loans: async (_: unknown, { loanDate }: { loanDate?: string } = {}) => {
+        let query = supabase
             .from('Loan')
             .select('loanId, userId, loanDate, startTime, endTime, reason, status, Classroom(code)')
             .order('createdAt', { ascending: false })
+
+        if (loanDate) {
+            query = query
+                .gte('loanDate', `${loanDate}T00:00:00`)
+                .lte('loanDate', `${loanDate}T23:59:59`)
+        }
+
+        const { data, error } = await query
         if (error) throw new Error(error.message)
 
         const userIds = [...new Set((data as any[]).map(l => l.userId))]

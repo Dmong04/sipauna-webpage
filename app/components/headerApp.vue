@@ -13,8 +13,10 @@ const navItems = computed(() => {
     { to: '/dashboard/schedules', label: 'Horarios' },
     { to: '/dashboard/booking', label: 'Solicitud de reservación' },
     { to: '/dashboard/availability', label: 'Comprobar disponibilidad' },
+    { to: '/dashboard/my-bookings', label: 'Mis reservas' },
   ]
   if (auth.user?.roleName === 'admin') {
+    items.push({ to: '/dashboard/loans', label: 'Préstamos' })
     items.push({ to: '/dashboard/users', label: 'Usuarios' })
   }
   return items

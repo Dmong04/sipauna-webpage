@@ -4,7 +4,13 @@ import jwt from 'jsonwebtoken'
 import { resolvers } from "../graphql/resolvers.index";
 import { typeDefs } from "../graphql/schema"
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'change-me-in-production'
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error(
+    '[SIPAUNA] JWT_SECRET no está configurado. ' +
+    'Definí la variable de entorno JWT_SECRET antes de iniciar el servidor.'
+  )
+}
 
 const yoga = createYoga({
     schema: makeExecutableSchema({ typeDefs, resolvers }),
